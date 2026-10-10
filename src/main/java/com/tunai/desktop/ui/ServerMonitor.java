@@ -32,6 +32,7 @@ public class ServerMonitor {
         return t;
     });
     private ScheduledFuture<?> next;
+    private volatile Boolean lastUp;
 
     public ServerMonitor(TunaiApiClient api, SessionState session, InstallationId installationId) {
         this.api = api;
@@ -75,6 +76,10 @@ public class ServerMonitor {
 
     private void check() {
         boolean up = api.health();
+        if (lastUp == null || lastUp != up) {
+            LOG.info("Servidor " + (up ? "listo" : "sin conexión") + ": " + api.baseUrl());
+            lastUp = up;
+        }
         SessionState.ServerStatus status = up ? SessionState.ServerStatus.READY : SessionState.ServerStatus.OFFLINE;
         Platform.runLater(() -> session.serverStatusProperty().set(status));
         if (up) {

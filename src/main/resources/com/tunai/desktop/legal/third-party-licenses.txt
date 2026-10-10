@@ -2,3 +2,4 @@ OpenJFX 21 — GPL v2 con Classpath Exception — https://openjdk.org/projects/o
 JglTF (de.javagl) — MIT License — https://github.com/javagl/JglTF
 Jackson — Apache License 2.0 — https://github.com/FasterXML/jackson
 ONNX Runtime (Microsoft) — MIT License — https://github.com/microsoft/onnxruntime
+MobileNetV2 (mobilenetv2-12.onnx, ONNX Model Zoo) — Apache License 2.0 según el Model Zoo; PENDIENTE DE VALIDAR — https://github.com/onnx/models

@@ -59,7 +59,6 @@ public class GeneratingController implements NavigationAware {
     private Button cancelButton;
 
     private Photo photo;
-    private Image preview;
     private String name;
     private Timeline clock;
     private CompletableFuture<Void> cancel;
@@ -71,7 +70,6 @@ public class GeneratingController implements NavigationAware {
 
     public void start(Photo photo, Image preview, String name) {
         this.photo = photo;
-        this.preview = preview;
         this.name = name;
         photoThumb.setImage(preview);
         run();

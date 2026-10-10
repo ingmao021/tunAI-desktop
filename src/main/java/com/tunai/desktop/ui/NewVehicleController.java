@@ -84,12 +84,6 @@ public class NewVehicleController implements NavigationAware {
         setStatus(null, null);
     }
 
-    /** Vuelve a esta pantalla tras un error con una foto ya elegida (por ejemplo {@code SERVICE_BUSY}). */
-    public void restore(Photo photo, String name) {
-        nameField.setText(name);
-        loadPhoto(photo, null);
-    }
-
     private void updateQuota() {
         quotaWarning.setText(QuotaText.generationWarning(context.session().getQuota()));
         updateGenerateButton();
@@ -168,11 +162,7 @@ public class NewVehicleController implements NavigationAware {
     }
 
     /** Decodifica, muestra la vista previa y corre el clasificador, todo fuera del hilo de la UI. */
-    private void loadPhoto(Photo validated, Long token) {
-        long current = token != null ? token : ++selection;
-        resetPhoto();
-        setStatus("◌ Revisando la foto…", null);
-        checking(true);
+    private void loadPhoto(Photo validated, long current) {
         context.background().execute(() -> {
             BufferedImage image;
             try {
