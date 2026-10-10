@@ -29,6 +29,7 @@ public class App extends Application {
         LoggingSetup.configure(paths.logsDir());
         LOG.info("Iniciando " + NAME + " " + version());
         context = new AppContext(paths);
+        LOG.info("Backend: " + context.api().baseUrl());
     }
 
     @Override
@@ -48,12 +49,15 @@ public class App extends Application {
             }
         });
 
+        // Calentamiento: despierta el backend de inmediato; el garaje funciona mientras tanto.
+        context.serverMonitor().start();
         navigator.goTo(context.settings().get().hasConsent() ? Navigator.Screen.GARAGE : Navigator.Screen.CONSENT);
         stage.show();
     }
 
     @Override
     public void stop() {
+        context.serverMonitor().stop();
         if (context.navigator() != null) {
             context.navigator().leaveCurrent();
         }

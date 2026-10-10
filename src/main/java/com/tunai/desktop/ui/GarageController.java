@@ -67,6 +67,9 @@ public class GarageController implements NavigationAware {
         context.session().serverStatusProperty().addListener(statusListener);
         context.session().quotaProperty().addListener(statusListener);
         refreshHeader();
+        if (context.session().getServerStatus() == SessionState.ServerStatus.READY) {
+            context.serverMonitor().refreshQuota();
+        }
 
         emptyLabel.visibleProperty().bind(Bindings.isEmpty(cardsPane.getChildren()));
         cardsScroll.visibleProperty().bind(emptyLabel.visibleProperty().not());
