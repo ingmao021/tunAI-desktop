@@ -51,6 +51,7 @@ public class App extends Application {
 
         // Calentamiento: despierta el backend de inmediato; el garaje funciona mientras tanto.
         context.serverMonitor().start();
+        context.background().execute(context.classifier()::load);
         navigator.goTo(context.settings().get().hasConsent() ? Navigator.Screen.GARAGE : Navigator.Screen.CONSENT);
         stage.show();
     }
@@ -58,6 +59,8 @@ public class App extends Application {
     @Override
     public void stop() {
         context.serverMonitor().stop();
+        context.background().shutdownNow();
+        context.classifier().close();
         if (context.navigator() != null) {
             context.navigator().leaveCurrent();
         }

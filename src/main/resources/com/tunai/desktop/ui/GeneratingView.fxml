@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tunai.desktop.ui.GeneratingController">
+    <VBox styleClass="surface" maxWidth="620" maxHeight="-Infinity" spacing="22" alignment="TOP_CENTER">
+        <padding>
+            <Insets top="32" right="44" bottom="32" left="44"/>
+        </padding>
+        <ImageView fx:id="photoThumb" fitWidth="260" fitHeight="180" preserveRatio="true" smooth="true"/>
+
+        <VBox spacing="10" maxWidth="Infinity">
+            <Label fx:id="stepValidated" styleClass="step"/>
+            <Label fx:id="stepWake" styleClass="step"/>
+            <Label fx:id="stepGenerate" styleClass="step"/>
+            <Label fx:id="stepPrepare" styleClass="step"/>
+        </VBox>
+
+        <HBox spacing="12" alignment="CENTER">
+            <ProgressBar fx:id="progress" progress="-1" prefWidth="320"/>
+            <Label fx:id="elapsedLabel" text="0:00" styleClass="muted"/>
+        </HBox>
+
+        <HBox spacing="16" alignment="CENTER_LEFT" maxWidth="Infinity">
+            <Label text="No cierres la app. Si cancelas, la generación podría contarse igual."
+                   wrapText="true" styleClass="muted, small" HBox.hgrow="ALWAYS" maxWidth="360"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="cancelButton" text="Cancelar espera" onAction="#onCancel"/>
+        </HBox>
+    </VBox>
+</StackPane>

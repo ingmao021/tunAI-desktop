@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tunai.desktop.ui.NewVehicleController">
+    <top>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT">
+            <Label text="Nuevo vehículo" styleClass="subtitle"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="← Garaje" onAction="#onCancel"/>
+        </HBox>
+    </top>
+    <center>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="28" right="40" bottom="28" left="40"/>
+            </padding>
+            <HBox spacing="40" VBox.vgrow="ALWAYS">
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <StackPane fx:id="dropZone" styleClass="drop-zone" minHeight="300" prefHeight="380"
+                               VBox.vgrow="ALWAYS" maxWidth="640">
+                        <ImageView fx:id="previewImage" preserveRatio="true" smooth="true"/>
+                        <VBox fx:id="dropHint" alignment="CENTER" spacing="10">
+                            <Label text="Arrastra tu foto aquí" style="-fx-font-size: 17px;"/>
+                            <HBox alignment="CENTER" spacing="8">
+                                <Label text="o" styleClass="muted"/>
+                                <Button text="Elegir archivo" onAction="#onChooseFile"/>
+                            </HBox>
+                            <Label text="JPG o PNG · máx. 10 MB" styleClass="muted, small"/>
+                        </VBox>
+                    </StackPane>
+                    <HBox fx:id="statusRow" spacing="8" alignment="CENTER_LEFT" maxWidth="640">
+                        <ProgressIndicator fx:id="checkingIndicator" prefWidth="18" prefHeight="18"
+                                           visible="false" managed="false"/>
+                        <Label fx:id="statusLabel" wrapText="true"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="changePhotoButton" text="Cambiar foto" onAction="#onChooseFile"
+                                visible="false" managed="false"/>
+                    </HBox>
+                </VBox>
+                <VBox spacing="10" minWidth="300">
+                    <Label text="Consejos para una buena foto" styleClass="section-title"/>
+                    <Label text="✓  Carro completo y centrado" styleClass="ok-text"/>
+                    <Label text="✓  Vista de 3/4 (frente y lateral)" styleClass="ok-text"/>
+                    <Label text="✓  Buena luz, sin sombras fuertes" styleClass="ok-text"/>
+                    <Label text="✓  Fondo despejado" styleClass="ok-text"/>
+                    <Label text="✗  Fotos de interiores o de detalles" styleClass="error-text"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Nombre:"/>
+                <TextField fx:id="nameField" text="Mi carro" prefColumnCount="24"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label fx:id="quotaWarning" styleClass="warn-text"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Cancelar" onAction="#onCancel"/>
+                <Button fx:id="generateButton" text="Generar modelo" styleClass="primary" onAction="#onGenerate"/>
+            </HBox>
+        </VBox>
+    </center>
+</BorderPane>
