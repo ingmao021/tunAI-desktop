@@ -23,8 +23,22 @@ class RecolorTest {
     }
 
     @Test
+    void silverBodyIsSeparatedFromGlassAndTires() {
+        int[] px = new int[100];
+        for (int i = 0; i < 100; i++) {
+            // 45 % plata visible, 20 % gris claro inventado por SF3D, 25 % vidrio, 10 % llantas
+            px[i] = i < 45 ? 0xFFD9DADC : i < 65 ? 0xFFA9AAAC : i < 90 ? 0xFF3A3D40 : 0xFF161616;
+        }
+        float[] mask = new BodyPaintMaskStrategy().computeMask(px, 10, 10, null);
+        assertEquals(1f, mask[0], 1e-6);
+        assertTrue(mask[50] > 0.9f, "El gris claro de las caras no vistas también es carrocería");
+        assertEquals(0f, mask[70], 1e-6, "El vidrio no es pintura");
+        assertEquals(0f, mask[95], 1e-6, "Las llantas no son pintura");
+    }
+
+    @Test
     void maskSelectsDominantPaintOnly() {
-        float[] mask = new DominantColorMaskStrategy().computeMask(texture(), 10, 10, null);
+        float[] mask = new BodyPaintMaskStrategy().computeMask(texture(), 10, 10, null);
         assertEquals(1f, mask[0], 1e-6);
         assertTrue(mask[60] > 0.5f, "El rojo oscuro también es pintura");
         assertEquals(0f, mask[80], 1e-6, "El vidrio negro no es pintura");
@@ -41,16 +55,16 @@ class RecolorTest {
         for (int i = 0; i < 40; i++) {
             coverage[i] = true;
         }
-        float[] mask = new DominantColorMaskStrategy().computeMask(px, 10, 10, coverage);
+        float[] mask = new BodyPaintMaskStrategy().computeMask(px, 10, 10, coverage);
         assertEquals(1f, mask[0], 1e-6);
-        assertEquals(0f, mask[35], 1e-6);
+        assertEquals(0f, mask[35], 1e-6, "Píxeles negros dentro de las islas");
         assertEquals(0f, mask[90], 1e-6);
     }
 
     @Test
     void recolorChangesHueAndKeepsDetail() {
         int[] tex = texture();
-        Recolorer recolorer = new Recolorer(tex, new DominantColorMaskStrategy().computeMask(tex, 10, 10, null));
+        Recolorer recolorer = new Recolorer(tex, new BodyPaintMaskStrategy().computeMask(tex, 10, 10, null));
         int[] out = recolorer.apply(BLUE, 1.0);
 
         double[] hsl = ColorSpaces.rgbToHsl(out[0], new double[3]);
@@ -64,7 +78,7 @@ class RecolorTest {
     @Test
     void zeroIntensityRestoresOriginal() {
         int[] tex = texture();
-        Recolorer recolorer = new Recolorer(tex, new DominantColorMaskStrategy().computeMask(tex, 10, 10, null));
+        Recolorer recolorer = new Recolorer(tex, new BodyPaintMaskStrategy().computeMask(tex, 10, 10, null));
         assertArrayEquals(tex, recolorer.apply(BLUE, 0));
     }
 
@@ -72,7 +86,7 @@ class RecolorTest {
     void whitePaintCanBecomeColored() {
         int[] tex = new int[100];
         java.util.Arrays.fill(tex, 0xFFF2F2F2);
-        Recolorer recolorer = new Recolorer(tex, new DominantColorMaskStrategy().computeMask(tex, 10, 10, null));
+        Recolorer recolorer = new Recolorer(tex, new BodyPaintMaskStrategy().computeMask(tex, 10, 10, null));
         double[] hsl = ColorSpaces.rgbToHsl(recolorer.apply(0xC62828, 1)[0], new double[3]);
         assertTrue(hsl[1] > 0.5, "Un carro blanco también toma el color");
     }

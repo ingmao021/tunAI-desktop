@@ -11,8 +11,21 @@ public final class UvCoverage {
      * @param indices   tres índices por triángulo
      */
     public static boolean[] compute(float[] texCoords, int[] indices, int width, int height) {
+        return compute(texCoords, indices, null, width, height);
+    }
+
+    /**
+     * Igual que {@link #compute(float[], int[], int, int)}, pero omite los triángulos que miran hacia
+     * abajo (bajos del carro). SF3D rellena con gris lo que la foto no ve, y esas zonas no son pintura.
+     *
+     * @param normals normales por vértice en ejes de JavaFX (Y hacia abajo); {@code null} no filtra
+     */
+    public static boolean[] compute(float[] texCoords, int[] indices, float[] normals, int width, int height) {
         boolean[] covered = new boolean[width * height];
         for (int t = 0; t + 2 < indices.length; t += 3) {
+            if (normals != null && facesDown(normals, indices[t], indices[t + 1], indices[t + 2])) {
+                continue;
+            }
             double x0 = wrap(texCoords[indices[t] * 2]) * width;
             double y0 = wrap(texCoords[indices[t] * 2 + 1]) * height;
             double x1 = wrap(texCoords[indices[t + 1] * 2]) * width;
@@ -23,6 +36,17 @@ public final class UvCoverage {
         }
         return covered;
     }
+
+    /** Normal media con componente Y (hacia abajo en JavaFX) mayor que {@link #DOWN_THRESHOLD}. */
+    private static boolean facesDown(float[] n, int a, int b, int c) {
+        double x = n[a * 3] + n[b * 3] + n[c * 3];
+        double y = n[a * 3 + 1] + n[b * 3 + 1] + n[c * 3 + 1];
+        double z = n[a * 3 + 2] + n[b * 3 + 2] + n[c * 3 + 2];
+        double len = Math.sqrt(x * x + y * y + z * z);
+        return len > 1e-9 && y / len > DOWN_THRESHOLD;
+    }
+
+    static final double DOWN_THRESHOLD = 0.5;
 
     private static double wrap(float v) {
         return v >= 0 && v <= 1 ? v : v - Math.floor(v);

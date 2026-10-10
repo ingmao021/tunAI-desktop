@@ -35,7 +35,7 @@ public class ModelViewer extends Pane {
     /** Vista inicial 3/4 frontal. */
     static final double INITIAL_YAW = -35;
     static final double INITIAL_PITCH = -18;
-    static final double INITIAL_DISTANCE = 480;
+    static final double INITIAL_DISTANCE = 370;
     /** Más cerca atravesaría el modelo (radio ≈ TARGET_SIZE·√3/2). */
     static final double MIN_DISTANCE = GlbModel.TARGET_SIZE * 0.95;
     static final double MAX_DISTANCE = 1400;

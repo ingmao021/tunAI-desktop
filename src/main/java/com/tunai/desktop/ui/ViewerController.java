@@ -6,7 +6,7 @@ import com.tunai.desktop.api.ErrorCode;
 import com.tunai.desktop.garage.GarageVehicle;
 import com.tunai.desktop.garage.VehicleMetadata;
 import com.tunai.desktop.image.FxImages;
-import com.tunai.desktop.paint.DominantColorMaskStrategy;
+import com.tunai.desktop.paint.BodyPaintMaskStrategy;
 import com.tunai.desktop.paint.PaintMaskStrategy;
 import com.tunai.desktop.paint.Recolorer;
 import com.tunai.desktop.paint.UvCoverage;
@@ -56,7 +56,7 @@ public class ViewerController implements NavigationAware {
     static final double DEFAULT_INTENSITY = 0.85;
 
     private final AppContext context;
-    private final PaintMaskStrategy maskStrategy = new DominantColorMaskStrategy();
+    private final PaintMaskStrategy maskStrategy = new BodyPaintMaskStrategy();
     private final ModelViewer viewer = new ModelViewer();
     private final ToggleGroup paletteGroup = new ToggleGroup();
     private final ToggleGroup compareGroup = new ToggleGroup();
@@ -239,7 +239,7 @@ public class ViewerController implements NavigationAware {
         int w = (int) original.getWidth();
         int h = (int) original.getHeight();
         int[] pixels = FxImages.argb(original);
-        boolean[] coverage = UvCoverage.compute(model.texCoords(), model.indices(), w, h);
+        boolean[] coverage = UvCoverage.compute(model.texCoords(), model.indices(), model.normals(), w, h);
         float[] mask = maskStrategy.computeMask(pixels, w, h, coverage);
         Recolorer prepared = new Recolorer(pixels, mask);
         Platform.runLater(() -> {
