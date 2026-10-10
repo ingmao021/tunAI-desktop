@@ -67,6 +67,10 @@ public class App extends Application {
         LoggingSetup.shutdown();
     }
 
+    public AppContext context() {
+        return context;
+    }
+
     public static String version() {
         try (InputStream in = App.class.getResourceAsStream("/com/tunai/desktop/app.properties")) {
             Properties props = new Properties();

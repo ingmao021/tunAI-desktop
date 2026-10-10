@@ -179,12 +179,12 @@
 }
 
 .swatch {
-    -fx-min-width: 28;
-    -fx-min-height: 28;
-    -fx-max-width: 28;
-    -fx-max-height: 28;
-    -fx-background-radius: 14;
-    -fx-border-radius: 14;
+    -fx-min-width: 26;
+    -fx-min-height: 26;
+    -fx-max-width: 26;
+    -fx-max-height: 26;
+    -fx-background-radius: 13;
+    -fx-border-radius: 13;
     -fx-border-color: -tunai-border;
     -fx-border-width: 2;
     -fx-cursor: hand;
@@ -193,6 +193,10 @@
 
 .swatch:selected {
     -fx-border-color: -tunai-text;
+}
+
+.color-picker.swatch-only > .color-picker-label {
+    -fx-content-display: graphic-only;
 }
 
 .viewer-toolbar {

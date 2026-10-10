@@ -2,6 +2,7 @@ package com.tunai.desktop.ui;
 
 import com.tunai.desktop.AppContext;
 import com.tunai.desktop.garage.GarageVehicle;
+import com.tunai.desktop.viewer.GlbTextureReplacer;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -12,7 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Exportar un vehículo del garaje como GLB. */
+/** Exportar un vehículo como GLB, con la textura editada si la tiene (§5.5). */
 final class VehicleExport {
 
     private static final Logger LOG = Logger.getLogger(VehicleExport.class.getName());
@@ -26,11 +27,21 @@ final class VehicleExport {
             return;
         }
         try {
-            Files.copy(vehicle.originalGlb(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            if (vehicle.editedTexture().isPresent()) {
+                byte[] glb = Files.readAllBytes(vehicle.originalGlb());
+                byte[] png = Files.readAllBytes(vehicle.editedTexture().get());
+                Files.write(target.toPath(), withTexture(glb, png));
+            } else {
+                Files.copy(vehicle.originalGlb(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
             LOG.log(Level.WARNING, "No se pudo exportar " + vehicle.id(), e);
             Dialogs.info(context.stage(), "Exportar", "No se pudo exportar el modelo.");
         }
+    }
+
+    static byte[] withTexture(byte[] glb, byte[] png) throws IOException {
+        return GlbTextureReplacer.replaceBaseColorTexture(glb, png);
     }
 
     static File chooseTarget(AppContext context, String baseName, String description, String pattern) {

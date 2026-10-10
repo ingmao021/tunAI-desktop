@@ -46,7 +46,7 @@
                         <Label fx:id="statusLabel" wrapText="true"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button fx:id="changePhotoButton" text="Cambiar foto" onAction="#onChooseFile"
-                                visible="false" managed="false"/>
+                                visible="false" managed="false" minWidth="-Infinity"/>
                     </HBox>
                 </VBox>
                 <VBox spacing="10" minWidth="300">

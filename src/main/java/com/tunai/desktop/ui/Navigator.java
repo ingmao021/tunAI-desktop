@@ -78,6 +78,10 @@ public class Navigator {
         currentController = null;
     }
 
+    public Object currentController() {
+        return currentController;
+    }
+
     public Scene scene() {
         return scene;
     }
