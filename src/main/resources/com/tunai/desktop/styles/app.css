@@ -1,0 +1,202 @@
+/*
+ * Tema claro de TunAI.
+ * Colores de marca, logo y tipografía: PENDIENTE (§10). Se centralizan aquí para cambiarlos fácilmente.
+ */
+.root {
+    -tunai-primary: #1f6feb;
+    -tunai-primary-hover: #1a5fd0;
+    -tunai-bg: #f5f6f8;
+    -tunai-surface: #ffffff;
+    -tunai-border: #d8dce3;
+    -tunai-text: #1c2330;
+    -tunai-muted: #677285;
+    -tunai-ok: #1f9d55;
+    -tunai-error: #d1383d;
+    -tunai-warn: #b7791f;
+
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: -tunai-bg;
+    -fx-text-fill: -tunai-text;
+}
+
+.label {
+    -fx-text-fill: -tunai-text;
+}
+
+.title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.subtitle {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.muted {
+    -fx-text-fill: -tunai-muted;
+}
+
+.small {
+    -fx-font-size: 12px;
+}
+
+.surface {
+    -fx-background-color: -tunai-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -tunai-border;
+    -fx-border-radius: 10;
+}
+
+.button {
+    -fx-background-radius: 6;
+    -fx-padding: 7 16 7 16;
+    -fx-cursor: hand;
+}
+
+.button.primary {
+    -fx-background-color: -tunai-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button.primary:hover {
+    -fx-background-color: -tunai-primary-hover;
+}
+
+.button.link {
+    -fx-background-color: transparent;
+    -fx-text-fill: -tunai-primary;
+    -fx-padding: 0;
+    -fx-underline: true;
+}
+
+.top-bar {
+    -fx-background-color: -tunai-surface;
+    -fx-border-color: transparent transparent -tunai-border transparent;
+    -fx-padding: 10 20 10 20;
+}
+
+.app-name {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tunai-primary;
+}
+
+.status-dot {
+    -fx-font-size: 14px;
+}
+
+.status-connecting {
+    -fx-text-fill: -tunai-muted;
+}
+
+.status-ok {
+    -fx-text-fill: -tunai-ok;
+}
+
+.status-error {
+    -fx-text-fill: -tunai-error;
+}
+
+.ok-text {
+    -fx-text-fill: -tunai-ok;
+}
+
+.error-text {
+    -fx-text-fill: -tunai-error;
+}
+
+.warn-text {
+    -fx-text-fill: -tunai-warn;
+}
+
+.notice {
+    -fx-background-color: #eef4ff;
+    -fx-background-radius: 8;
+    -fx-border-color: #c4d7fb;
+    -fx-border-radius: 8;
+    -fx-padding: 12;
+}
+
+/* Garaje */
+.vehicle-card {
+    -fx-background-color: -tunai-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -tunai-border;
+    -fx-border-radius: 10;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+}
+
+.vehicle-card:hover {
+    -fx-border-color: -tunai-primary;
+}
+
+.vehicle-card .name {
+    -fx-font-weight: bold;
+}
+
+/* Nuevo vehículo */
+.drop-zone {
+    -fx-background-color: -tunai-surface;
+    -fx-border-color: -tunai-border;
+    -fx-border-style: segments(8, 6);
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.drop-zone.drag-over {
+    -fx-border-color: -tunai-primary;
+    -fx-background-color: #eef4ff;
+}
+
+/* Generando */
+.step {
+    -fx-font-size: 15px;
+}
+
+.step-pending {
+    -fx-text-fill: -tunai-muted;
+}
+
+.step-done {
+    -fx-text-fill: -tunai-ok;
+}
+
+/* Visor */
+.side-panel {
+    -fx-background-color: -tunai-surface;
+    -fx-border-color: transparent transparent transparent -tunai-border;
+    -fx-padding: 16;
+}
+
+.section-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+.swatch {
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-max-width: 28;
+    -fx-max-height: 28;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: -tunai-border;
+    -fx-border-width: 2;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.swatch:selected {
+    -fx-border-color: -tunai-text;
+}
+
+.viewer-toolbar {
+    -fx-background-color: rgba(255, 255, 255, 0.85);
+    -fx-background-radius: 8;
+    -fx-padding: 4 8 4 8;
+}
