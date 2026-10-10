@@ -24,6 +24,6 @@ public class Settings {
         /** Salida de emergencia para la demo (§5.3.1); no se expone en la UI. */
         public boolean enabled = true;
         /** Umbral de la suma de probabilidades de clases de vehículo en el top 5. */
-        public double threshold = 0.40;
+        public double threshold = 0.45;
     }
 }

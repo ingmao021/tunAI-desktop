@@ -64,7 +64,7 @@ class LocalDataTest {
         Files.writeString(file, "{\"classifier\": {\"enabled\": false}, \"campoNuevo\": 1}");
         Settings settings = new SettingsStore(file).get();
         assertFalse(settings.classifier.enabled);
-        assertEquals(0.40, settings.classifier.threshold);
+        assertEquals(0.45, settings.classifier.threshold);
     }
 
     @Test
