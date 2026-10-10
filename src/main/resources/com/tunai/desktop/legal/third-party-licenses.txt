@@ -1,0 +1,4 @@
+OpenJFX 21 — GPL v2 con Classpath Exception — https://openjdk.org/projects/openjfx/
+JglTF (de.javagl) — MIT License — https://github.com/javagl/JglTF
+Jackson — Apache License 2.0 — https://github.com/FasterXML/jackson
+ONNX Runtime (Microsoft) — MIT License — https://github.com/microsoft/onnxruntime

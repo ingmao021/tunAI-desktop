@@ -1,0 +1,13 @@
+[BORRADOR — texto legal definitivo PENDIENTE (Ley 1581 de 2012, art. 26; backend P-BE-06). Reemplazar este archivo.]
+
+¿Qué datos se envían?
+Solo la foto que eliges para generar el modelo 3D, junto con un identificador anónimo de esta instalación. No se piden nombre, correo ni cuentas.
+
+¿A quién y para qué?
+La foto pasa por el servidor de TunAI y se envía a Stability AI, un proveedor ubicado fuera de Colombia, con el único fin de generar el modelo 3D de tu vehículo.
+
+¿Se guarda la foto?
+TunAI no guarda la foto. El modelo 3D resultante se guarda solo en este computador, en tu garaje local, y nunca se sube al servidor.
+
+Tus derechos
+Puedes dejar de usar la función de generación en cualquier momento.
