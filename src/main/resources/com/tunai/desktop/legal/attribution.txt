@@ -1,1 +1,1 @@
-Modelos 3D generados con Stable Fast 3D de Stability AI.
+Modelos 3D generados con Tripo AI o con Stable Fast 3D de Stability AI, según el proveedor activo en el servidor.
