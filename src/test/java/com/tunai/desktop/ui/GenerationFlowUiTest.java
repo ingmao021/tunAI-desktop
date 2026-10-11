@@ -8,6 +8,7 @@ import javafx.application.Application;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
 import javafx.scene.image.WritableImage;
 import org.junit.jupiter.api.AfterEach;
@@ -123,14 +124,18 @@ class GenerationFlowUiTest extends FxRobot {
     @Test
     void fullFlowGenerateRecolorSaveReopen() throws Exception {
         // CA-UI-03 y CA-UI-10: indicador del servidor y cuota inicial.
-        waitFor(() -> lookup("● Servidor listo").tryQuery().isPresent());
-        waitFor(() -> lookup("Hoy: 0 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("●").tryQuery().isPresent());
+        waitFor(() -> lookup("Modelos 3D hoy: 0 de 2").tryQuery().isPresent());
         snapshot("01-garaje-vacio.png");
 
         clickOn("+ Nuevo vehículo");
         NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
         Path photo = writePhoto("carro.jpg", Color.RED);
         interact(() -> newVehicle.selectFile(photo));
+        // El nombre ya no viene relleno (solo placeholder): sin nombre no se puede generar.
+        TextField nameField = lookup("#nameField").queryAs(TextField.class);
+        assertTrue(nameField.getText().isEmpty());
+        interact(() -> nameField.setText("Mi carro"));
         Button generate = lookup("Generar modelo").queryButton();
         waitFor(() -> !generate.isDisabled());
         snapshot("02-nuevo-vehiculo.png");
@@ -171,7 +176,7 @@ class GenerationFlowUiTest extends FxRobot {
 
         clickOn("← Garaje");
         waitFor(() -> lookup("Mi carro").tryQuery().isPresent());
-        waitFor(() -> lookup("Hoy: 1 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("Modelos 3D hoy: 1 de 2").tryQuery().isPresent());
         snapshot("06-garaje-con-vehiculo.png");
 
         // CA-UI-09: cerrar y reabrir conserva el vehículo con su color.
@@ -194,11 +199,12 @@ class GenerationFlowUiTest extends FxRobot {
     @Test
     void providerErrorShowsMessageAndNeverRetries() throws Exception {
         generationMode.set("error");
-        waitFor(() -> lookup("Hoy: 0 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("Modelos 3D hoy: 0 de 2").tryQuery().isPresent());
         clickOn("+ Nuevo vehículo");
         NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
         Path photo = writePhoto("carro.png", Color.BLUE);
         interact(() -> newVehicle.selectFile(photo));
+        interact(() -> lookup("#nameField").queryAs(TextField.class).setText("Error"));
         Button generate = lookup("Generar modelo").queryButton();
         waitFor(() -> !generate.isDisabled());
         clickOn(generate);
@@ -222,7 +228,7 @@ class GenerationFlowUiTest extends FxRobot {
     @Test
     void nonVehiclePhotoBlocksGeneration() throws Exception {
         context().settings().get().classifier.enabled = true;
-        waitFor(() -> lookup("Hoy: 0 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("Modelos 3D hoy: 0 de 2").tryQuery().isPresent());
         clickOn("+ Nuevo vehículo");
         NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
         Path photo = writePhoto("cuadro.jpg", Color.BLACK);

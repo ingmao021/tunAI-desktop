@@ -14,11 +14,12 @@ final class StatusIndicator {
         label.getStyleClass().removeAll(CLASSES);
         switch (status) {
             case CONNECTING -> {
-                label.setText("○ Conectando…");
+                label.setText("○ Calentando motores…");
                 label.getStyleClass().add("status-connecting");
             }
             case READY -> {
-                label.setText("● Servidor listo");
+                // Solo el punto verde: el texto lo lleva el contador de modelos.
+                label.setText("●");
                 label.getStyleClass().add("status-ok");
             }
             case OFFLINE -> {

@@ -80,7 +80,7 @@ public class GeneratingController implements NavigationAware {
         setStep(stepValidated, "Foto validada", StepState.DONE);
         stepWake.setVisible(!serverReady);
         stepWake.setManaged(!serverReady);
-        setStep(stepWake, "Despertando el servidor…  (puede tardar ~1 min)", StepState.PENDING);
+        setStep(stepWake, "Calentando motores del taller 3D…  (puede tardar ~1 min)", StepState.PENDING);
         setStep(stepGenerate, "Generando modelo 3D", StepState.PENDING);
         setStep(stepPrepare, "Preparando visor", StepState.PENDING);
         cancelButton.setDisable(false);

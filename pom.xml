@@ -16,6 +16,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <javafx.version>21.0.12</javafx.version>
+        <!-- 2.x es la última línea compilada para Java 21; la 3.x exige Java 25 -->
+        <atlantafx.version>2.1.0</atlantafx.version>
         <jgltf.version>2.0.4</jgltf.version>
         <jackson.version>2.22.3</jackson.version>
         <onnxruntime.version>1.31.0</onnxruntime.version>
@@ -52,6 +54,12 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>${atlantafx.version}</version>
         </dependency>
 
         <dependency>

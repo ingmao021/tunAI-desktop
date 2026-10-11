@@ -61,7 +61,7 @@
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Nombre:"/>
-                <TextField fx:id="nameField" text="Mi carro" prefColumnCount="24"/>
+                <TextField fx:id="nameField" promptText="Ej: Mazda 3 2024 «El Rayo Rojo»" prefColumnCount="24"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">

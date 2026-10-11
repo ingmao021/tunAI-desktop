@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import atlantafx.base.controls.Spacer?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
@@ -9,19 +10,25 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!-- Garaje con componentes de AtlantaFX: las tarjetas (Card + Tile) se crean en GarageController. -->
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.tunai.desktop.ui.GarageController">
     <top>
-        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="18">
-            <Label text="TunAI" styleClass="app-name"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="serverStatusLabel" styleClass="status-dot"/>
-            <Label fx:id="quotaLabel" styleClass="muted"/>
-            <MenuButton text="?" styleClass="help-menu">
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
+            <Label text="TunAI" styleClass="app-name, title-3"/>
+            <Spacer/>
+            <HBox styleClass="header-pill" alignment="CENTER" spacing="14">
+                <Label fx:id="serverStatusLabel" styleClass="status-dot, text-small"/>
+                <Label fx:id="quotaLabel" styleClass="text-muted, text-small"/>
+            </HBox>
+            <!-- button-circle solo pinta el gráfico, por eso el "?" va como Label -->
+            <MenuButton styleClass="help-menu, button-circle, flat, no-arrow">
+                <graphic>
+                    <Label text="?" styleClass="text-bold"/>
+                </graphic>
                 <items>
                     <MenuItem text="Acerca de TunAI" onAction="#onAbout"/>
                 </items>
@@ -29,25 +36,36 @@
         </HBox>
     </top>
     <center>
-        <VBox spacing="20">
+        <VBox spacing="24">
             <padding>
-                <Insets top="24" right="32" bottom="24" left="32"/>
+                <Insets top="32" right="40" bottom="24" left="40"/>
             </padding>
-            <HBox alignment="CENTER_LEFT">
-                <Label text="Mi garaje" styleClass="title"/>
-                <Region HBox.hgrow="ALWAYS"/>
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <VBox spacing="2">
+                    <Label text="Mi garaje" styleClass="title-1"/>
+                    <Label fx:id="countLabel" styleClass="text-muted"/>
+                </VBox>
+                <Spacer/>
                 <!-- Contenedor para mostrar el tooltip aun con el botón deshabilitado -->
                 <StackPane fx:id="newVehicleWrapper">
-                    <Button fx:id="newVehicleButton" text="+ Nuevo vehículo" styleClass="primary"
+                    <Button fx:id="newVehicleButton" text="+ Nuevo vehículo" styleClass="accent, large, text-bold"
                             onAction="#onNewVehicle"/>
                 </StackPane>
             </HBox>
             <StackPane VBox.vgrow="ALWAYS">
-                <ScrollPane fx:id="cardsScroll" fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
-                    <FlowPane fx:id="cardsPane" hgap="18" vgap="18"/>
+                <ScrollPane fx:id="cardsScroll" fitToWidth="true" styleClass="edge-to-edge, garage-scroll">
+                    <FlowPane fx:id="cardsPane" hgap="20" vgap="20">
+                        <padding>
+                            <Insets top="4" right="4" bottom="12" left="4"/>
+                        </padding>
+                    </FlowPane>
                 </ScrollPane>
-                <Label fx:id="emptyLabel" styleClass="muted" style="-fx-font-size: 16px;"
-                       text="Aún no tienes vehículos. Crea el primero con + Nuevo vehículo"/>
+                <VBox fx:id="emptyState" styleClass="empty-state" alignment="CENTER" spacing="16"
+                      maxWidth="520" maxHeight="-Infinity">
+                    <Label text="Tu garaje está vacío" styleClass="title-3"/>
+                    <Label fx:id="emptyLabel" styleClass="text-muted" wrapText="true"
+                           text="Aún no tienes vehículos. Crea el primero con + Nuevo vehículo"/>
+                </VBox>
             </StackPane>
         </VBox>
     </center>

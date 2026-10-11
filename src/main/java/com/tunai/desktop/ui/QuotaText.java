@@ -10,12 +10,12 @@ public final class QuotaText {
 
     public static String header(Quota quota) {
         if (quota == null) {
-            return "Hoy: –";
+            return "Modelos 3D hoy: –";
         }
         if (quota.exhausted()) {
-            return "Sin generaciones hoy · se renuevan a las 00:00";
+            return "Taller cerrado por hoy · reabre a las 00:00";
         }
-        return "Hoy: " + quota.used() + " de " + quota.limit();
+        return "Modelos 3D hoy: " + quota.used() + " de " + quota.limit();
     }
 
     public static String generationWarning(Quota quota) {

@@ -1,27 +1,23 @@
 /*
- * Tema claro de TunAI.
- * Colores de marca, logo y tipografía: PENDIENTE (§10). Se centralizan aquí para cambiarlos fácilmente.
+ * Estilos propios de TunAI sobre el tema AtlantaFX (Cupertino Light, ver App#start).
+ * Los colores salen de las variables del tema (-color-*), así combinan con los controles
+ * y un cambio de tema (p. ej. PrimerDark) los arrastra. Marca, logo y tipografía: PENDIENTE (§10).
  */
 .root {
-    -tunai-primary: #1f6feb;
-    -tunai-primary-hover: #1a5fd0;
-    -tunai-bg: #f5f6f8;
-    -tunai-surface: #ffffff;
-    -tunai-border: #d8dce3;
-    -tunai-text: #1c2330;
-    -tunai-muted: #677285;
-    -tunai-ok: #1f9d55;
-    -tunai-error: #d1383d;
-    -tunai-warn: #b7791f;
+    -tunai-primary: -color-accent-emphasis;
+    -tunai-primary-hover: -color-accent-fg;
+    -tunai-bg: -color-bg-subtle;
+    -tunai-surface: -color-bg-default;
+    -tunai-border: -color-border-default;
+    -tunai-text: -color-fg-default;
+    -tunai-muted: -color-fg-muted;
+    -tunai-ok: -color-success-fg;
+    -tunai-error: -color-danger-fg;
+    -tunai-warn: -color-warning-fg;
+    -tunai-highlight: -color-accent-subtle;
+    -tunai-highlight-border: -color-accent-muted;
 
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 14px;
     -fx-background-color: -tunai-bg;
-    -fx-text-fill: -tunai-text;
-}
-
-.label {
-    -fx-text-fill: -tunai-text;
 }
 
 .title {
@@ -50,23 +46,28 @@
 }
 
 .button {
-    -fx-background-radius: 6;
-    -fx-padding: 7 16 7 16;
     -fx-cursor: hand;
 }
 
 .button.primary {
-    -fx-background-color: -tunai-primary;
-    -fx-text-fill: white;
+    -color-button-bg: -color-accent-emphasis;
+    -color-button-fg: -color-fg-emphasis;
+    -color-button-border: -color-accent-emphasis;
+    -color-button-bg-hover: -color-accent-fg;
+    -color-button-border-hover: -color-accent-fg;
+    -color-button-fg-hover: -color-fg-emphasis;
+    -color-button-bg-focused: -color-accent-emphasis;
+    -color-button-fg-focused: -color-fg-emphasis;
+    -color-button-bg-pressed: -color-accent-fg;
+    -color-button-fg-pressed: -color-fg-emphasis;
     -fx-font-weight: bold;
-}
-
-.button.primary:hover {
-    -fx-background-color: -tunai-primary-hover;
 }
 
 .button.link {
     -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-effect: none;
     -fx-text-fill: -tunai-primary;
     -fx-padding: 0;
     -fx-underline: true;
@@ -113,29 +114,55 @@
 }
 
 .notice {
-    -fx-background-color: #eef4ff;
+    -fx-background-color: -tunai-highlight;
     -fx-background-radius: 8;
-    -fx-border-color: #c4d7fb;
+    -fx-border-color: -tunai-highlight-border;
     -fx-border-radius: 8;
     -fx-padding: 12;
 }
 
-/* Garaje */
+/* Garaje: tarjetas Card + Tile de AtlantaFX */
+.header-pill {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 999;
+    -fx-padding: 5 14 5 14;
+}
+
+.garage-scroll,
+.garage-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
 .vehicle-card {
-    -fx-background-color: -tunai-surface;
-    -fx-background-radius: 10;
-    -fx-border-color: -tunai-border;
-    -fx-border-radius: 10;
-    -fx-padding: 10;
     -fx-cursor: hand;
 }
 
-.vehicle-card:hover {
+.vehicle-card > .container {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+}
+
+.vehicle-card:hover > .container {
     -fx-border-color: -tunai-primary;
 }
 
-.vehicle-card .name {
-    -fx-font-weight: bold;
+.thumb-box {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 8;
+}
+
+.empty-state {
+    -fx-background-color: -tunai-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -tunai-border;
+    -fx-border-style: segments(8, 6);
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-padding: 40;
+}
+
+.empty-state > .label {
+    -fx-text-alignment: center;
 }
 
 /* Nuevo vehículo */
@@ -150,7 +177,7 @@
 
 .drop-zone.drag-over {
     -fx-border-color: -tunai-primary;
-    -fx-background-color: #eef4ff;
+    -fx-background-color: -tunai-highlight;
 }
 
 /* Generando */
@@ -200,7 +227,9 @@
 }
 
 .viewer-toolbar {
-    -fx-background-color: rgba(255, 255, 255, 0.85);
+    -fx-background-color: -tunai-surface;
+    -fx-border-color: -tunai-border;
+    -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-padding: 4 8 4 8;
 }

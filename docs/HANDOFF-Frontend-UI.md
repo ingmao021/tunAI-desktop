@@ -131,7 +131,7 @@ Aparece **solo la primera vez** o hasta que el usuario acepte.
 ### 5.2 Garaje (pantalla de inicio)
 
 ```
-┌─ TunAI ─────────────────────────────────── ● Servidor listo  Hoy: 1 de 2 ─┐
+┌─ TunAI ─────────────────────────────────────── ●  Modelos 3D hoy: 1 de 2 ─┐
 │                                                                           │
 │  Mi garaje                                        [ + Nuevo vehículo ]    │
 │                                                                           │
@@ -146,11 +146,11 @@ Aparece **solo la primera vez** o hasta que el usuario acepte.
 ```
 
 - **Indicador del servidor** (arriba a la derecha):
-  - `○ Conectando…` (gris) mientras responde `GET /actuator/health`;
-  - `● Servidor listo` (verde) con `200`;
+  - `○ Calentando motores…` (gris) mientras responde `GET /actuator/health`;
+  - `●` (verde, sin texto) con `200`;
   - `● Sin conexión` (rojo) si falla. Se reintenta cada 15 s.
 - **Calentamiento:** al abrir la app se llama de inmediato a `GET /actuator/health`. El backend en Render tarda **~1 minuto** en despertar si estaba dormido. La app debe seguir funcionando mientras tanto (el garaje es local).
-- **Contador de cuota:** viene de `GET /api/v1/quota` y se muestra como `Hoy: {limit - remaining} de {limit}`. Con `remaining = 0`, mostrar `Sin generaciones hoy · se renuevan a las 00:00`.
+- **Contador de cuota:** viene de `GET /api/v1/quota` y se muestra como `Modelos 3D hoy: {limit - remaining} de {limit}`. Con `remaining = 0`, mostrar `Taller cerrado por hoy · reabre a las 00:00`.
 - **Tarjeta:** clic abre el visor. Menú contextual: Renombrar, Exportar, Eliminar (con confirmación).
 - `+ Nuevo vehículo` está deshabilitado (con tooltip explicando por qué) si `remaining = 0` o si no hay consentimiento.
 
@@ -167,7 +167,7 @@ Aparece **solo la primera vez** o hasta que el usuario acepte.
 │  │                              │   ✗ Fotos de interiores o de detalles  │
 │  └──────────────────────────────┘                                        │
 │                                                                          │
-│  Nombre: [ Mi carro                  ]                                   │
+│  Nombre: [ Ej: Mazda 3 2024 «El Rayo Rojo» ]                             │
 │                                                                          │
 │  ⚠ Esto usará 1 de tus 2 generaciones de hoy.                            │
 │                                         [ Cancelar ] [ Generar modelo ]  │
@@ -242,7 +242,7 @@ Aparece **solo la primera vez** o hasta que el usuario acepte.
 │                    [miniatura de la foto]                │
 │                                                          │
 │    ✓ Foto validada                                       │
-│    ◌ Despertando el servidor…  (puede tardar ~1 min)     │
+│    ◌ Calentando motores del taller 3D… (~1 min)          │
 │    ○ Generando modelo 3D                                 │
 │    ○ Preparando visor                                    │
 │                                                          │
@@ -253,7 +253,7 @@ Aparece **solo la primera vez** o hasta que el usuario acepte.
 └──────────────────────────────────────────────────────────┘
 ```
 
-- Si el servidor ya estaba "listo", se omite el paso "Despertando el servidor".
+- Si el servidor ya estaba "listo", se omite el paso "Calentando motores del taller 3D".
 - La barra es **indeterminada** (no hay progreso real) y va con un cronómetro.
 - Timeout total del cliente: **120 s** → error `CLIENT_TIMEOUT` (§7).
 - `Cancelar espera` solo deja de esperar; el backend puede terminar la generación de todas formas. Se avisa en el texto.

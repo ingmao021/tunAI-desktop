@@ -1,15 +1,20 @@
 package com.tunai.desktop.ui;
 
+import atlantafx.base.controls.Card;
+import atlantafx.base.controls.Tile;
+import atlantafx.base.theme.Styles;
 import com.tunai.desktop.AppContext;
 import com.tunai.desktop.api.Quota;
 import com.tunai.desktop.garage.GarageVehicle;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
@@ -17,6 +22,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -36,7 +42,8 @@ public class GarageController implements NavigationAware {
     private static final Logger LOG = Logger.getLogger(GarageController.class.getName());
     private static final DateTimeFormatter CARD_DATE =
             DateTimeFormatter.ofPattern("dd MMM", Locale.forLanguageTag("es-CO")).withZone(ZoneId.systemDefault());
-    private static final double THUMB_SIZE = 180;
+    private static final double THUMB_SIZE = 200;
+    private static final double CARD_WIDTH = 232;
 
     private final AppContext context;
     private final ChangeListener<Object> statusListener = (obs, oldValue, newValue) -> refreshHeader();
@@ -55,6 +62,10 @@ public class GarageController implements NavigationAware {
     @FXML
     private FlowPane cardsPane;
     @FXML
+    private Label countLabel;
+    @FXML
+    private VBox emptyState;
+    @FXML
     private Label emptyLabel;
 
     public GarageController(AppContext context) {
@@ -71,8 +82,10 @@ public class GarageController implements NavigationAware {
             context.serverMonitor().refreshQuota();
         }
 
-        emptyLabel.visibleProperty().bind(Bindings.isEmpty(cardsPane.getChildren()));
-        cardsScroll.visibleProperty().bind(emptyLabel.visibleProperty().not());
+        BooleanBinding empty = Bindings.isEmpty(cardsPane.getChildren());
+        emptyState.visibleProperty().bind(empty);
+        emptyLabel.visibleProperty().bind(empty);
+        cardsScroll.visibleProperty().bind(empty.not());
         reloadVehicles();
     }
 
@@ -105,9 +118,14 @@ public class GarageController implements NavigationAware {
     private void reloadVehicles() {
         List<GarageVehicle> vehicles = context.garage().list();
         cardsPane.getChildren().setAll(vehicles.stream().map(this::createCard).toList());
+        countLabel.setText(switch (vehicles.size()) {
+            case 0 -> "";
+            case 1 -> "1 vehículo";
+            default -> vehicles.size() + " vehículos";
+        });
     }
 
-    private VBox createCard(GarageVehicle vehicle) {
+    private Card createCard(GarageVehicle vehicle) {
         ImageView thumb = new ImageView();
         thumb.setFitWidth(THUMB_SIZE);
         thumb.setFitHeight(THUMB_SIZE);
@@ -115,37 +133,63 @@ public class GarageController implements NavigationAware {
         vehicle.thumbnail().ifPresent(p -> thumb.setImage(new Image(p.toUri().toString(), true)));
         StackPane thumbBox = new StackPane(thumb);
         thumbBox.setPrefSize(THUMB_SIZE, THUMB_SIZE);
-        thumbBox.setStyle("-fx-background-color: #eef0f4; -fx-background-radius: 6;");
+        thumbBox.getStyleClass().add("thumb-box");
         if (vehicle.thumbnail().isEmpty()) {
             Label noThumb = new Label("Sin vista previa");
-            noThumb.getStyleClass().addAll("muted", "small");
+            noThumb.getStyleClass().addAll(Styles.TEXT_MUTED, Styles.TEXT_SMALL);
             thumbBox.getChildren().add(noThumb);
         }
 
-        Label name = new Label(vehicle.name());
-        name.getStyleClass().add("name");
-        name.setMaxWidth(THUMB_SIZE);
-        Label date = new Label(formatDate(vehicle));
-        date.getStyleClass().addAll("muted", "small");
+        // Las mismas acciones que el clic derecho, pero visibles.
+        // button-icon solo pinta el gráfico, por eso los puntos van como Label.
+        Label dots = new Label("•••");
+        dots.setStyle("-fx-font-size: 11px;");
+        MenuButton actions = new MenuButton(null, dots);
+        actions.getItems().setAll(actionItems(vehicle));
+        actions.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT, "no-arrow");
 
-        VBox card = new VBox(8, thumbBox, name, date);
-        card.getStyleClass().add("vehicle-card");
-        card.setAlignment(Pos.TOP_LEFT);
-        card.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
+        String date = formatDate(vehicle);
+        Tile info = new Tile(vehicle.name(), date.isEmpty() ? null : date);
+        info.setAction(actions);
+
+        Card card = new Card();
+        card.getStyleClass().addAll("vehicle-card", Styles.ELEVATED_1, Styles.INTERACTIVE);
+        card.setPrefWidth(CARD_WIDTH);
+        card.setMaxWidth(CARD_WIDTH);
+        card.setSubHeader(thumbBox);
+        card.setBody(info);
+        // Filtro (no handler): el clic debe llegar aunque lo reciba un nodo interno del Card o del Tile.
+        card.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() == MouseButton.PRIMARY && !isInside(e.getPickResult().getIntersectedNode(), actions)) {
                 openViewer(vehicle);
             }
         });
 
+        ContextMenu menu = new ContextMenu();
+        menu.getItems().setAll(actionItems(vehicle));
+        card.setOnContextMenuRequested(e -> menu.show(card, e.getScreenX(), e.getScreenY()));
+        return card;
+    }
+
+    private static boolean isInside(Node node, Node ancestor) {
+        for (Node n = node; n != null; n = n.getParent()) {
+            if (n == ancestor) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Un MenuItem solo puede estar en un menú, así que cada menú pide los suyos. */
+    private List<MenuItem> actionItems(GarageVehicle vehicle) {
         MenuItem rename = new MenuItem("Renombrar");
         rename.setOnAction(e -> rename(vehicle));
         MenuItem export = new MenuItem("Exportar");
         export.setOnAction(e -> VehicleExport.exportGlb(context, vehicle));
         MenuItem delete = new MenuItem("Eliminar");
+        delete.getStyleClass().add(Styles.DANGER);
         delete.setOnAction(e -> delete(vehicle));
-        ContextMenu menu = new ContextMenu(rename, export, new SeparatorMenuItem(), delete);
-        card.setOnContextMenuRequested(e -> menu.show(card, e.getScreenX(), e.getScreenY()));
-        return card;
+        return List.of(rename, export, new SeparatorMenuItem(), delete);
     }
 
     private static String formatDate(GarageVehicle vehicle) {
