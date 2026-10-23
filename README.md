@@ -36,6 +36,36 @@ La app no guarda ninguna clave: la de Tripo vive solo en el backend (`TRIPO_API_
 4. **Primer modelo real.** El plazo del backend es 85 s (`TUNAI_TRIPO_MAX_WAIT`, por el proxy de ~100 s de Render). Si Tripo tarda más, el backend responde `504`, Tripo cobra igual y el GLB se pierde (PRD del backend, P-BE-10). El visor solo acepta GLB de 1 malla, 1 primitiva y 1 material: si el de Tripo no cumple, la app lo guarda en `logs\unsupported-*.glb` para ajustar el visor.
 5. **Después de generar.** Comprobar que el vehículo aparece en el garaje, abre en el visor, se recolorea, se guarda y se exporta, y que el contador bajó lo que informa el backend (`creditsPerModel`).
 
+## Instaladores
+
+Cada instalador incluye Java (no hace falta instalarlo) y se arma con `jpackage` **en su propio sistema operativo**.
+
+### Publicar una Release (Windows, macOS y Linux)
+
+Corre las pruebas en local (`.\mvnw.cmd verify`) y crea un tag:
+
+```powershell
+git tag v1.0.1; git push origin v1.0.1
+```
+
+El workflow [`release.yml`](.github/workflows/release.yml) arma `TunAI-<versión>.exe`, `TunAI-<versión>.dmg` (Apple Silicon, sin firmar) y `tunai_<versión>_amd64.deb`, y los publica en **Releases**. La versión sale del tag (`v1.0.1` → `1.0.1`, solo números). Si cambia el workflow en `develop`, arma los instaladores como artefactos sin publicar.
+
+### `.exe` en local (Windows)
+
+Requiere el JDK 21 completo (el runtime de IntelliJ no trae `jpackage`) y los binarios de [WiX 3.14](https://github.com/wixtoolset/wix3/releases/tag/wix3141rtm) en el `PATH` (`wix314-binaries.zip`, sin instalar):
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.12.1"
+$env:PATH = "$env:JAVA_HOME\bin;C:\ruta\a\wix314;$env:PATH"
+.\mvnw.cmd clean package -DskipTests
+jpackage --type exe --name TunAI --app-version 1.0.0 --vendor TunAI `
+  --input target\app --main-jar tunai-desktop.jar --main-class com.tunai.desktop.Launcher `
+  --icon src\main\resources\icon.ico --dest target\installer `
+  --win-menu --win-shortcut --win-dir-chooser --win-upgrade-uuid f31c8be9-4220-4bca-8eaf-1ee788b073d9
+```
+
+El instalador queda en `target\installer\`. El `--win-upgrade-uuid` no debe cambiar: con él una versión nueva reemplaza a la anterior.
+
 ## Datos locales
 
 Todo vive en `%APPDATA%\TunAI\`:
@@ -85,4 +115,5 @@ Incluyen pruebas de UI con TestFX que abren ventanas: no muevas el mouse mientra
 | Logo, colores de marca y tipografía | PENDIENTE; colores centralizados en `styles/app.css` |
 | Ajuste de la máscara de pintura con el GLB real | Tras el ensayo |
 | Calibración con fotos propias del equipo | Antes del ensayo |
-| Instalador `.exe` (`jpackage`) | Fase 9, cuando todo funcione contra Render |
+| Datos en macOS y Linux | Hoy van a `~/AppData/Roaming/TunAI`; lo propio es `~/Library/Application Support` y `~/.local/share` (`AppPaths`) |
+| Firma de los instaladores | Sin firmar: Windows SmartScreen y macOS Gatekeeper avisan la primera vez |
