@@ -35,8 +35,8 @@ public class TunaiApiClient {
     private static final Logger LOG = Logger.getLogger(TunaiApiClient.class.getName());
 
     public static final Duration GENERATION_TIMEOUT = Duration.ofSeconds(120);
-    /** El backend en Render tarda ~1 minuto en despertar. */
-    public static final Duration HEALTH_TIMEOUT = Duration.ofSeconds(90);
+    /** El backend en Render tarda ~1 minuto en despertar (medido: hasta 86 s). */
+    public static final Duration HEALTH_TIMEOUT = Duration.ofSeconds(120);
     public static final Duration QUOTA_TIMEOUT = Duration.ofSeconds(30);
 
     private final HttpClient http;
@@ -94,8 +94,11 @@ public class TunaiApiClient {
         }
         try {
             JsonNode body = Json.MAPPER.readTree(response.body());
+            JsonNode credits = body.path("credits");
+            JsonNode perModel = body.path("creditsPerModel");
             return new Quota(body.path("limit").asInt(), body.path("remaining").asInt(),
-                    parseInstant(body.path("resetsAt").asText(null)));
+                    parseInstant(body.path("resetsAt").asText(null)), credits.isInt() ? credits.asInt() : null,
+                    perModel.isInt() && perModel.asInt() > 0 ? perModel.asInt() : null);
         } catch (IOException e) {
             throw ApiException.client(ErrorCode.INTERNAL_ERROR, "Respuesta de cuota ilegible", e);
         }
@@ -204,7 +207,11 @@ public class TunaiApiClient {
             return Optional.empty();
         }
         Instant reset = response.headers().firstValue("X-Quota-Reset").map(TunaiApiClient::parseInstant).orElse(null);
-        return Optional.of(new Quota(limit.get(), remaining.get(), reset));
+        Integer credits = response.headers().firstValue("X-Credits-Balance").flatMap(TunaiApiClient::parseInt)
+                .orElse(null);
+        Integer perModel = response.headers().firstValue("X-Credits-Per-Model").flatMap(TunaiApiClient::parseInt)
+                .filter(n -> n > 0).orElse(null);
+        return Optional.of(new Quota(limit.get(), remaining.get(), reset, credits, perModel));
     }
 
     /** Acepta ISO-8601 o segundos desde epoch. */

@@ -7,6 +7,7 @@ import com.tunai.desktop.config.AppPaths;
 import com.tunai.desktop.config.InstallationId;
 import com.tunai.desktop.config.SettingsStore;
 import com.tunai.desktop.garage.GarageRepository;
+import com.tunai.desktop.ui.Credits;
 import com.tunai.desktop.ui.Navigator;
 import com.tunai.desktop.ui.ServerMonitor;
 import com.tunai.desktop.ui.SessionState;
@@ -44,6 +45,34 @@ public class AppContext {
         this.serverMonitor = new ServerMonitor(api, session, installationId);
         this.classifier = new OnnxVehicleClassifier(() -> settings.get().classifier.threshold,
                 paths.root().resolve("vehicle-classes.txt"));
+        Integer credits = settings.get().credits;
+        session.creditsProperty().set(credits != null ? credits : Credits.INITIAL);
+        session.quotaProperty().addListener((obs, old, quota) -> {
+            if (quota != null && quota.creditsPerModel() != null) {
+                session.creditsPerModelProperty().set(quota.creditsPerModel());
+            }
+            if (quota != null && quota.credits() != null) {
+                syncCredits(quota.credits());
+            }
+        });
+    }
+
+    /**
+     * Aplica el saldo que informa el backend. Se queda con el menor de los dos: el backend guarda la cuota en memoria
+     * y, si Render se reinicia, volvería a dar los créditos iniciales. Solo en el hilo de JavaFX.
+     */
+    public void syncCredits(int backendCredits) {
+        int credits = Math.max(0, Math.min(session.getCredits(), backendCredits));
+        if (credits != session.getCredits() || settings.get().credits == null) {
+            session.creditsProperty().set(credits);
+            settings.get().credits = credits;
+            settings.save();
+        }
+    }
+
+    /** Descuenta un modelo 3D de los créditos y lo guarda. Solo en el hilo de JavaFX. */
+    public void spendModelCredits() {
+        syncCredits(session.getCredits() - session.getCreditsPerModel());
     }
 
     void attach(Stage stage, Navigator navigator) {

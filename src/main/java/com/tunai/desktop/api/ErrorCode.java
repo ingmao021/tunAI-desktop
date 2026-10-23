@@ -15,11 +15,13 @@ public enum ErrorCode {
     UNSUPPORTED_MEDIA_TYPE("Solo se aceptan fotos JPG o PNG.", Action.BACK_TO_NEW_VEHICLE),
     PROVIDER_REJECTED("La IA no pudo procesar esta foto. Prueba con otra donde el carro se vea completo.",
             Action.BACK_TO_NEW_VEHICLE),
-    QUOTA_EXCEEDED("Ya usaste tus generaciones de hoy. Se renuevan a las 00:00.", Action.QUOTA_EXHAUSTED),
-    PROVIDER_ERROR("El servicio de IA falló. No se descontó tu cuota.", Action.RETRY),
+    INSUFFICIENT_CREDITS("Te quedaste sin créditos. Elige un plan para seguir creando modelos.", Action.SHOW_PLANS),
+    QUOTA_EXCEEDED("Alcanzaste el máximo de modelos de hoy desde esta red. Podrás crear más mañana.",
+            Action.QUOTA_EXHAUSTED),
+    PROVIDER_ERROR("El servicio de IA falló. No se descontaron tus créditos.", Action.RETRY),
     SERVICE_BUSY("El servidor está ocupado. Intenta en {retryAfter} s.", Action.RETRY_COUNTDOWN),
     SERVICE_UNAVAILABLE("El servicio no está disponible en este momento.", Action.BACK_TO_GARAGE),
-    PROVIDER_TIMEOUT("La IA tardó demasiado. No se descontó tu cuota.", Action.RETRY),
+    PROVIDER_TIMEOUT("La IA tardó demasiado. No se descontaron tus créditos.", Action.RETRY),
     INTERNAL_ERROR("Ocurrió un error inesperado.", Action.BACK_TO_GARAGE),
     BAD_REQUEST("Ocurrió un error inesperado.", Action.BACK_TO_GARAGE, true),
     NOT_FOUND("Ocurrió un error inesperado.", Action.BACK_TO_GARAGE, true),
@@ -45,6 +47,8 @@ public enum ErrorCode {
         RETRY_COUNTDOWN,
         /** Marcar la cuota en cero y deshabilitar {@code + Nuevo vehículo}. */
         QUOTA_EXHAUSTED,
+        /** Sin créditos: dejar el saldo en cero y mostrar los planes en vez del mensaje. */
+        SHOW_PLANS,
         /** Regenerar el installation-id y volver al garaje. */
         REGENERATE_ID,
         /** Quedarse en la pantalla actual. */

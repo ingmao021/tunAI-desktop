@@ -14,6 +14,9 @@ public class Settings {
     /** Base URL del backend. La variable de entorno {@code TUNAI_API_URL} tiene prioridad. */
     public String apiBaseUrl;
 
+    /** Créditos que le quedan a esta instalación. Nulo = recién instalada (se reciben los iniciales). */
+    public Integer credits;
+
     public Classifier classifier = new Classifier();
 
     public boolean hasConsent() {

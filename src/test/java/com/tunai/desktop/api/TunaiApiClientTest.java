@@ -110,11 +110,12 @@ class TunaiApiClientTest {
         handlers.put("/api/v1/quota", ex -> {
             header.set(ex.getRequestHeaders().getFirst("X-Installation-Id"));
             respond(ex, 200, "application/json",
-                    "{\"limit\":2,\"remaining\":1,\"resetsAt\":\"2026-10-10T05:00:00Z\"}".getBytes());
+                    ("{\"limit\":3,\"remaining\":1,\"resetsAt\":\"2026-10-10T05:00:00Z\","
+                            + "\"credits\":15,\"creditsPerModel\":15}").getBytes());
         });
         Quota quota = client.quota();
-        assertEquals(new Quota(2, 1, Instant.parse("2026-10-10T05:00:00Z")), quota);
-        assertEquals(1, quota.used());
+        assertEquals(new Quota(3, 1, Instant.parse("2026-10-10T05:00:00Z"), 15, 15), quota);
+        assertEquals(2, quota.used());
         assertEquals(INSTALLATION.toString(), header.get());
     }
 
@@ -125,13 +126,15 @@ class TunaiApiClientTest {
             ex.getResponseHeaders().add("X-Quota-Limit", "2");
             ex.getResponseHeaders().add("X-Quota-Remaining", "0");
             ex.getResponseHeaders().add("X-Quota-Reset", "2026-10-11T05:00:00Z");
+            ex.getResponseHeaders().add("X-Credits-Balance", "0");
+            ex.getResponseHeaders().add("X-Credits-Per-Model", "20");
             respond(ex, 200, "model/gltf-binary", glb);
         });
         byte[] photo = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1, 2, 3};
         GenerationResult result = client.generate(photo, "carro.jpg", "image/jpeg", new CompletableFuture<>());
 
         assertArrayEquals(glb, result.glb());
-        assertEquals(new Quota(2, 0, Instant.parse("2026-10-11T05:00:00Z")), result.quota());
+        assertEquals(new Quota(2, 0, Instant.parse("2026-10-11T05:00:00Z"), 0, 20), result.quota());
 
         HttpExchangeSnapshot sent = lastGeneration.get();
         assertEquals(INSTALLATION.toString(), sent.installationId());
