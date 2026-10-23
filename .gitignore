@@ -41,3 +41,6 @@ build/
 .idea/
 .mcp.json
 *.log
+.claude/worktrees/
+# Modelo de terceros de 62 MB: supera el límite recomendado de GitHub
+docs/GLB/fixture.glb
