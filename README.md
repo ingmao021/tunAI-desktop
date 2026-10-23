@@ -1,12 +1,12 @@
 # TunAI Desktop
 
-App de escritorio (JavaFX) de TunAI: el usuario toma una foto de su carro, el backend genera un modelo 3D con Stable Fast 3D, y la app lo muestra, le cambia el color y lo guarda en un garaje local.
+App de escritorio (JavaFX) de TunAI: el usuario toma una foto de su carro, el backend genera un modelo 3D con Tripo API v3, y la app lo muestra, le cambia el color y lo guarda en un garaje local.
 
 La especificación está en [`docs/HANDOFF-Frontend-UI.md`](docs/HANDOFF-Frontend-UI.md).
 
 ## Requisitos
 
-- JDK 21 (Maven no hace falta: el proyecto trae el Maven Wrapper `mvnw`).
+- JDK 21 o superior (probado con 25). Maven no hace falta: el proyecto trae el Maven Wrapper `mvnw`.
 
 ## Ejecutar
 
@@ -14,13 +14,27 @@ La especificación está en [`docs/HANDOFF-Frontend-UI.md`](docs/HANDOFF-Fronten
 .\mvnw.cmd javafx:run
 ```
 
-Por defecto la app usa el backend de producción (`https://tunai-api-qd5x.onrender.com`). Para desarrollar contra el backend local en modo `fake`:
+Por defecto la app usa el backend de producción (`https://tunai-api-qd5x.onrender.com`). Para usar un backend local:
 
 ```powershell
 $env:TUNAI_API_URL = "http://localhost:8080"; .\mvnw.cmd javafx:run
 ```
 
-Prioridad de la base URL: variable `TUNAI_API_URL` → `apiBaseUrl` en `settings.json` → producción.
+Prioridad de la base URL: propiedad `-Dtunai.api.url` (pruebas) → variable `TUNAI_API_URL` → `apiBaseUrl` en `settings.json` → producción.
+
+El backend ya no tiene proveedor `fake`: **cada generación exitosa gasta créditos reales de Tripo**. Las pruebas automáticas usan un servidor HTTP falso que solo existe en `src/test`.
+
+## Prueba real con Tripo
+
+La app no guarda ninguna clave: la de Tripo vive solo en el backend (`TRIPO_API_KEY`, en Render o en el entorno local). Antes de gastar créditos:
+
+1. **Saldo de Tripo.** Cada modelo cuesta ~40 créditos de Tripo, y el backend exige `TUNAI_TRIPO_MIN_BALANCE` (40) disponibles antes de crear nada. Se consulta gratis:
+   `curl -s -H "Authorization: Bearer $TRIPO_API_KEY" https://openapi.tripo3d.ai/v3/account/balance`.
+   Con saldo insuficiente la app muestra «El servicio no está disponible en este momento» (`503 SERVICE_UNAVAILABLE`) y no descuenta créditos.
+2. **Ensayo sin gasto.** Con el backend local y `TUNAI_TRIPO_MIN_BALANCE=100000`, una generación se detiene en la consulta del saldo: valida la clave, la red y el manejo de errores sin subir la foto ni crear tareas.
+3. **Límites del backend.** En Render, `TUNAI_QUOTA_PER_IP` y `TUNAI_QUOTA_GLOBAL_DAILY` están en 2 (valores de la demo): el tercer modelo del día devuelve `429` aunque queden créditos.
+4. **Primer modelo real.** El plazo del backend es 85 s (`TUNAI_TRIPO_MAX_WAIT`, por el proxy de ~100 s de Render). Si Tripo tarda más, el backend responde `504`, Tripo cobra igual y el GLB se pierde (PRD del backend, P-BE-10). El visor solo acepta GLB de 1 malla, 1 primitiva y 1 material: si el de Tripo no cumple, la app lo guarda en `logs\unsupported-*.glb` para ajustar el visor.
+5. **Después de generar.** Comprobar que el vehículo aparece en el garaje, abre en el visor, se recolorea, se guarda y se exporta, y que el contador bajó lo que informa el backend (`creditsPerModel`).
 
 ## Datos locales
 
@@ -54,7 +68,7 @@ Incluyen pruebas de UI con TestFX que abren ventanas: no muevas el mouse mientra
 ## Decisiones que conviene conocer
 
 - **La generación nunca se reintenta sola.** Cada generación (también un reintento manual) pide confirmación.
-- **El modelo se guarda en el garaje en cuanto llega**, antes de abrir el visor: cada generación cuesta cuota y no debe perderse si la app se cierra.
+- **El modelo se guarda en el garaje en cuanto llega**, antes de abrir el visor: cada generación cuesta créditos y no debe perderse si la app se cierra.
 - **Validación del GLB (§3):** se exige 1 malla, 1 primitiva, 1 material con textura de color base y ninguna extensión obligatoria. Si el GLB trae otras texturas (por ejemplo un mapa de normales), se ignoran en lugar de rechazar el modelo.
 - **Recoloreado:** la máscara de pintura (`PaintMaskStrategy`) solo considera los píxeles que usa el modelo (islas UV) y busca el color dominante. Hay que ajustarla con el GLB del ensayo real.
 - **Exportar GLB** reemplaza la imagen de color base reescribiendo los chunks del GLB (JglTF reescribe la imagen desde el `bufferView` original y no permitía reemplazarla de forma fiable).
@@ -65,7 +79,7 @@ Incluyen pruebas de UI con TestFX que abren ventanas: no muevas el mouse mientra
 | Tema | Estado |
 |---|---|
 | Texto legal de consentimiento (Ley 1581) | PENDIENTE; reemplazar `src/main/resources/com/tunai/desktop/legal/consent-*.txt` |
-| Atribución exigida por Stability AI | PENDIENTE DE VALIDAR; `legal/attribution.txt` |
+| Atribución o términos exigidos por Tripo AI | PENDIENTE DE VALIDAR; `legal/attribution.txt` y `consent-*.txt` aún nombran también a Stability AI |
 | Licencia de los pesos de MobileNetV2 | PENDIENTE DE VALIDAR (el Model Zoo indica Apache-2.0) |
 | Rines | PENDIENTE (PRD frontend §17); no implementado |
 | Logo, colores de marca y tipografía | PENDIENTE; colores centralizados en `styles/app.css` |
