@@ -1,5 +1,6 @@
 package com.tunai.desktop;
 
+import atlantafx.base.theme.CupertinoLight;
 import com.tunai.desktop.config.AppPaths;
 import com.tunai.desktop.ui.Navigator;
 import com.tunai.desktop.ui.Resources;
@@ -34,12 +35,16 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) {
+        // Tema base AtlantaFX; app.css redefine sus colores con la marca TunAI y añade las clases propias.
+        Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+        Resources.loadFonts();
         Scene scene = new Scene(new StackPane(), MIN_WIDTH, MIN_HEIGHT);
         scene.getStylesheets().add(Resources.stylesheet());
         Navigator navigator = new Navigator(scene, context);
         context.attach(stage, navigator);
 
         stage.setTitle(NAME);
+        stage.getIcons().setAll(Resources.appIcons());
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         stage.setScene(scene);

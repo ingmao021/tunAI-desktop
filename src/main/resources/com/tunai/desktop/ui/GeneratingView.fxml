@@ -9,32 +9,57 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.tunai.desktop.ui.GeneratingController">
-    <VBox styleClass="surface" maxWidth="620" maxHeight="-Infinity" spacing="22" alignment="TOP_CENTER">
-        <padding>
-            <Insets top="32" right="44" bottom="32" left="44"/>
-        </padding>
-        <ImageView fx:id="photoThumb" fitWidth="260" fitHeight="180" preserveRatio="true" smooth="true"/>
+    <VBox spacing="22" alignment="CENTER" maxWidth="660" maxHeight="-Infinity">
+        <HBox styleClass="flow-steps">
+            <Label text="Foto" styleClass="flow-step, done">
+                <graphic><Label text="1" styleClass="step-num"/></graphic>
+            </Label>
+            <Region styleClass="flow-sep"/>
+            <Label text="Modelo 3D" styleClass="flow-step, active">
+                <graphic><Label text="2" styleClass="step-num"/></graphic>
+            </Label>
+            <Region styleClass="flow-sep"/>
+            <Label text="Color" styleClass="flow-step">
+                <graphic><Label text="3" styleClass="step-num"/></graphic>
+            </Label>
+        </HBox>
 
-        <VBox spacing="10" maxWidth="Infinity">
-            <Label fx:id="stepValidated" styleClass="step"/>
-            <Label fx:id="stepWake" styleClass="step"/>
-            <Label fx:id="stepGenerate" styleClass="step"/>
-            <Label fx:id="stepPrepare" styleClass="step"/>
+        <VBox styleClass="surface" spacing="24" alignment="TOP_CENTER" maxWidth="Infinity">
+            <padding>
+                <Insets top="30" right="44" bottom="28" left="44"/>
+            </padding>
+            <HBox spacing="28" alignment="CENTER_LEFT">
+                <StackPane styleClass="photo-frame">
+                    <ImageView fx:id="photoThumb" fitWidth="240" fitHeight="170" preserveRatio="true" smooth="true"/>
+                </StackPane>
+                <VBox spacing="14" HBox.hgrow="ALWAYS">
+                    <Label text="Creando tu modelo 3D" styleClass="subtitle"/>
+                    <VBox spacing="12" maxWidth="Infinity">
+                        <Label fx:id="stepValidated" styleClass="step" wrapText="true"/>
+                        <Label fx:id="stepWake" styleClass="step" wrapText="true"/>
+                        <Label fx:id="stepGenerate" styleClass="step" wrapText="true"/>
+                        <Label fx:id="stepPrepare" styleClass="step" wrapText="true"/>
+                    </VBox>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="14" alignment="CENTER_LEFT" maxWidth="Infinity">
+                <FontIcon iconLiteral="mdmz-timer" iconSize="20"/>
+                <ProgressBar fx:id="progress" progress="-1" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                <Label fx:id="elapsedLabel" text="0:00" styleClass="elapsed" minWidth="-Infinity"/>
+            </HBox>
+
+            <HBox spacing="16" alignment="CENTER_LEFT" maxWidth="Infinity">
+                <FontIcon iconLiteral="mdal-info" iconSize="16"/>
+                <Label text="No cierres la app. Si cancelas, la generación podría contarse igual."
+                       wrapText="true" styleClass="muted, small" HBox.hgrow="ALWAYS" maxWidth="380"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="cancelButton" text="Cancelar espera" styleClass="ghost" onAction="#onCancel"/>
+            </HBox>
         </VBox>
-
-        <HBox spacing="12" alignment="CENTER">
-            <ProgressBar fx:id="progress" progress="-1" prefWidth="320"/>
-            <Label fx:id="elapsedLabel" text="0:00" styleClass="muted"/>
-        </HBox>
-
-        <HBox spacing="16" alignment="CENTER_LEFT" maxWidth="Infinity">
-            <Label text="No cierres la app. Si cancelas, la generación podría contarse igual."
-                   wrapText="true" styleClass="muted, small" HBox.hgrow="ALWAYS" maxWidth="360"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="cancelButton" text="Cancelar espera" onAction="#onCancel"/>
-        </HBox>
     </VBox>
 </StackPane>

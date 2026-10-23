@@ -5,7 +5,6 @@
 <?import javafx.scene.control.ColorPicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
-<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.BorderPane?>
@@ -14,65 +13,110 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.tunai.desktop.ui.ViewerController">
     <top>
-        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="14">
+            <Button text="Garaje" styleClass="ghost" onAction="#onBack">
+                <graphic>
+                    <FontIcon iconLiteral="mdal-arrow_back"/>
+                </graphic>
+            </Button>
+            <Region styleClass="top-bar-divider"/>
             <Label fx:id="titleLabel" styleClass="subtitle"/>
-            <Label fx:id="unsavedLabel" text="· sin guardar" styleClass="muted" visible="false"/>
+            <Label fx:id="unsavedLabel" text="· sin guardar" styleClass="unsaved-chip" visible="false"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="← Garaje" onAction="#onBack"/>
-            <Button fx:id="saveButton" text="Guardar" styleClass="primary" onAction="#onSave"/>
+            <Button fx:id="saveButton" text="Guardar" styleClass="primary" onAction="#onSave">
+                <graphic>
+                    <FontIcon iconLiteral="mdmz-save"/>
+                </graphic>
+            </Button>
         </HBox>
     </top>
     <center>
-        <StackPane fx:id="viewerHost" minWidth="400">
+        <StackPane fx:id="viewerHost" styleClass="viewer-stage" minWidth="400">
             <ProgressIndicator fx:id="loadingIndicator" maxWidth="60" maxHeight="60"/>
-            <HBox fx:id="viewerToolbar" styleClass="viewer-toolbar" spacing="10" alignment="CENTER_LEFT"
-                  StackPane.alignment="BOTTOM_LEFT" maxWidth="-Infinity" maxHeight="-Infinity">
+            <HBox fx:id="viewerToolbar" styleClass="viewer-toolbar" spacing="16" alignment="CENTER_LEFT"
+                  StackPane.alignment="BOTTOM_CENTER" maxWidth="-Infinity" maxHeight="-Infinity">
                 <StackPane.margin>
-                    <Insets bottom="14" left="14"/>
+                    <Insets bottom="20"/>
                 </StackPane.margin>
-                <Label text="⟲ Girar: arrastra" styleClass="muted, small"/>
-                <Label text="⊕ Zoom: rueda" styleClass="muted, small"/>
-                <Label text="Desplazar: clic derecho" styleClass="muted, small"/>
-                <Button text="⌂ Vista inicial" onAction="#onResetView"/>
-                <ToggleButton fx:id="autoRotateToggle" text="▶ Auto"/>
+                <Label text="Girar: arrastra" styleClass="hint">
+                    <graphic><FontIcon iconLiteral="mdal-3d_rotation"/></graphic>
+                </Label>
+                <Label text="Zoom: rueda" styleClass="hint">
+                    <graphic><FontIcon iconLiteral="mdmz-zoom_in"/></graphic>
+                </Label>
+                <Label text="Desplazar: clic derecho" styleClass="hint">
+                    <graphic><FontIcon iconLiteral="mdmz-open_with"/></graphic>
+                </Label>
+                <Region styleClass="top-bar-divider" prefHeight="20" maxHeight="20"/>
+                <HBox spacing="4" alignment="CENTER_LEFT">
+                    <Button text="Vista inicial" onAction="#onResetView">
+                        <graphic><FontIcon iconLiteral="mdal-center_focus_strong"/></graphic>
+                    </Button>
+                    <ToggleButton fx:id="autoRotateToggle" text="Auto">
+                        <graphic><FontIcon iconLiteral="mdmz-rotate_right"/></graphic>
+                    </ToggleButton>
+                </HBox>
             </HBox>
         </StackPane>
     </center>
     <right>
-        <VBox styleClass="side-panel" spacing="12" prefWidth="290" minWidth="290">
+        <VBox styleClass="side-panel" spacing="14" prefWidth="310" minWidth="310">
             <Label text="Personalizar" styleClass="subtitle"/>
 
-            <Label text="Pintura" styleClass="section-title"/>
-            <FlowPane fx:id="palette" hgap="6" vgap="6" prefWrapLength="258"/>
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label text="Color personalizado" minWidth="-Infinity"/>
-                <ColorPicker fx:id="customColor" styleClass="swatch-only"/>
-            </HBox>
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label text="Intensidad"/>
-                <Slider fx:id="intensitySlider" min="0" max="1" value="0.85" HBox.hgrow="ALWAYS"/>
-            </HBox>
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Button fx:id="restoreButton" text="Restaurar original" onAction="#onRestore"/>
-                <ProgressIndicator fx:id="paintingIndicator" prefWidth="18" prefHeight="18" visible="false"/>
-            </HBox>
-            <Label fx:id="paintStatus" styleClass="muted, small" wrapText="true"/>
+            <VBox styleClass="panel-section">
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <FontIcon iconLiteral="mdal-format_paint" iconSize="16"/>
+                    <Label text="PINTURA" styleClass="section-title"/>
+                </HBox>
+                <FlowPane fx:id="palette" hgap="4" vgap="4" prefWrapLength="270"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="Color personalizado" minWidth="-Infinity"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <ColorPicker fx:id="customColor" styleClass="swatch-only"/>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Intensidad"/>
+                    <Slider fx:id="intensitySlider" min="0" max="1" value="0.85" HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Button fx:id="restoreButton" text="Restaurar original" onAction="#onRestore">
+                        <graphic><FontIcon iconLiteral="mdmz-restore"/></graphic>
+                    </Button>
+                    <ProgressIndicator fx:id="paintingIndicator" prefWidth="18" prefHeight="18" visible="false"/>
+                </HBox>
+                <Label fx:id="paintStatus" styleClass="muted, small" wrapText="true"/>
+            </VBox>
 
-            <Separator/>
-            <Label text="Comparar" styleClass="section-title"/>
-            <HBox>
-                <ToggleButton fx:id="beforeToggle" text="Antes" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                <ToggleButton fx:id="afterToggle" text="Después" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-            </HBox>
+            <VBox styleClass="panel-section">
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <FontIcon iconLiteral="mdal-compare" iconSize="16"/>
+                    <Label text="COMPARAR" styleClass="section-title"/>
+                </HBox>
+                <HBox styleClass="segmented">
+                    <ToggleButton fx:id="beforeToggle" text="Antes" styleClass="left-pill" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <ToggleButton fx:id="afterToggle" text="Después" styleClass="right-pill" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                </HBox>
+            </VBox>
 
-            <Separator/>
-            <Label text="Exportar" styleClass="section-title"/>
-            <Button text="Imagen PNG" maxWidth="Infinity" onAction="#onExportPng"/>
-            <Button text="Modelo GLB" maxWidth="Infinity" onAction="#onExportGlb"/>
+            <VBox styleClass="panel-section">
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <FontIcon iconLiteral="mdal-get_app" iconSize="16"/>
+                    <Label text="EXPORTAR" styleClass="section-title"/>
+                </HBox>
+                <VBox spacing="8">
+                    <Button text="Imagen PNG" maxWidth="Infinity" onAction="#onExportPng">
+                        <graphic><FontIcon iconLiteral="mdal-image"/></graphic>
+                    </Button>
+                    <Button text="Modelo GLB" maxWidth="Infinity" onAction="#onExportGlb">
+                        <graphic><FontIcon iconLiteral="mdal-layers"/></graphic>
+                    </Button>
+                </VBox>
+            </VBox>
         </VBox>
     </right>
 </BorderPane>

@@ -8,6 +8,8 @@ import javafx.application.Application;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.Label;
 import javafx.scene.image.WritableImage;
 import org.junit.jupiter.api.AfterEach;
@@ -49,7 +51,9 @@ class GenerationFlowUiTest extends FxRobot {
     private HttpServer server;
     private final AtomicInteger generationCalls = new AtomicInteger();
     private final AtomicReference<String> generationMode = new AtomicReference<>("ok");
-    private final AtomicInteger remaining = new AtomicInteger(2);
+    /** Modelos que le quedan a la instalación en el backend simulado: 45 créditos a 15 por modelo. */
+    private final AtomicInteger remaining = new AtomicInteger(3);
+    private final AtomicInteger credits = new AtomicInteger(45);
     private Application app;
     private byte[] glb;
 
@@ -66,7 +70,8 @@ class GenerationFlowUiTest extends FxRobot {
             ex.close();
         });
         server.createContext("/api/v1/quota", ex -> {
-            byte[] body = ("{\"limit\":2,\"remaining\":" + remaining.get() + ",\"resetsAt\":\"2026-10-11T05:00:00Z\"}").getBytes();
+            byte[] body = ("{\"limit\":3,\"remaining\":" + remaining.get() + ",\"resetsAt\":\"2026-10-11T05:00:00Z\""
+                    + ",\"credits\":" + credits.get() + ",\"creditsPerModel\":15}").getBytes();
             ex.getResponseHeaders().add("Content-Type", "application/json");
             ex.sendResponseHeaders(200, body.length);
             ex.getResponseBody().write(body);
@@ -78,11 +83,22 @@ class GenerationFlowUiTest extends FxRobot {
             if (generationMode.get().equals("ok")) {
                 int left = remaining.decrementAndGet();
                 ex.getResponseHeaders().add("Content-Type", "model/gltf-binary");
-                ex.getResponseHeaders().add("X-Quota-Limit", "2");
+                ex.getResponseHeaders().add("X-Quota-Limit", "3");
                 ex.getResponseHeaders().add("X-Quota-Remaining", String.valueOf(left));
                 ex.getResponseHeaders().add("X-Quota-Reset", "2026-10-11T05:00:00Z");
+                ex.getResponseHeaders().add("X-Credits-Balance", String.valueOf(credits.addAndGet(-15)));
+                ex.getResponseHeaders().add("X-Credits-Per-Model", "15");
                 ex.sendResponseHeaders(200, glb.length);
                 ex.getResponseBody().write(glb);
+            } else if (generationMode.get().equals("no-credits")) {
+                byte[] body = "{\"status\":402,\"code\":\"INSUFFICIENT_CREDITS\",\"traceId\":\"def456\"}"
+                        .getBytes(StandardCharsets.UTF_8);
+                ex.getResponseHeaders().add("Content-Type", "application/problem+json");
+                ex.getResponseHeaders().add("X-Quota-Limit", "3");
+                ex.getResponseHeaders().add("X-Quota-Remaining", "0");
+                ex.getResponseHeaders().add("X-Credits-Balance", "0");
+                ex.sendResponseHeaders(402, body.length);
+                ex.getResponseBody().write(body);
             } else {
                 byte[] body = "{\"status\":502,\"code\":\"PROVIDER_ERROR\",\"traceId\":\"abc123\"}".getBytes(StandardCharsets.UTF_8);
                 ex.getResponseHeaders().add("Content-Type", "application/problem+json");
@@ -123,27 +139,32 @@ class GenerationFlowUiTest extends FxRobot {
     @Test
     void fullFlowGenerateRecolorSaveReopen() throws Exception {
         // CA-UI-03 y CA-UI-10: indicador del servidor y cuota inicial.
-        waitFor(() -> lookup("● Servidor listo").tryQuery().isPresent());
-        waitFor(() -> lookup("Hoy: 0 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("●").tryQuery().isPresent());
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
         snapshot("01-garaje-vacio.png");
 
         clickOn("+ Nuevo vehículo");
         NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
         Path photo = writePhoto("carro.jpg", Color.RED);
         interact(() -> newVehicle.selectFile(photo));
+        // El nombre ya no viene relleno (solo placeholder): sin nombre no se puede generar.
+        TextField nameField = lookup("#nameField").queryAs(TextField.class);
+        assertTrue(nameField.getText().isEmpty());
+        interact(() -> nameField.setText("Mi carro"));
         Button generate = lookup("Generar modelo").queryButton();
         waitFor(() -> !generate.isDisabled());
         snapshot("02-nuevo-vehiculo.png");
 
         // CA-UI-05: confirmación antes de generar.
         clickOn(generate);
-        waitFor(() -> lookup("Vas a usar 1 de tus generaciones. ¿Continuar?").tryQuery().isPresent());
+        waitFor(() -> lookup("Vas a usar 15 créditos. ¿Continuar?").tryQuery().isPresent());
         clickOn("Generar");
 
         waitFor(() -> lookup("Personalizar").tryQuery().isPresent());
         waitFor(() -> lookup(".swatch").queryAll().stream().noneMatch(Node::isDisabled));
         assertEquals(1, generationCalls.get());
-        assertEquals(1, context().session().getQuota().remaining(), "CA-UI-10: cuota de los headers");
+        assertEquals(2, context().session().getQuota().remaining(), "CA-UI-10: cuota de los headers");
+        assertEquals(30, context().session().getCredits(), "Cada modelo usa 15 de los 45 créditos iniciales");
         snapshot("03-visor.png");
 
         // CA-UI-08: recolorear sin congelar y restaurar.
@@ -169,9 +190,9 @@ class GenerationFlowUiTest extends FxRobot {
         assertTrue(saved.thumbnail().isPresent());
         assertEquals("#1565C0", saved.metadata().paint.color);
 
-        clickOn("← Garaje");
+        clickOn("Garaje");
         waitFor(() -> lookup("Mi carro").tryQuery().isPresent());
-        waitFor(() -> lookup("Hoy: 1 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("30 créditos").tryQuery().isPresent());
         snapshot("06-garaje-con-vehiculo.png");
 
         // CA-UI-09: cerrar y reabrir conserva el vehículo con su color.
@@ -194,17 +215,18 @@ class GenerationFlowUiTest extends FxRobot {
     @Test
     void providerErrorShowsMessageAndNeverRetries() throws Exception {
         generationMode.set("error");
-        waitFor(() -> lookup("Hoy: 0 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
         clickOn("+ Nuevo vehículo");
         NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
         Path photo = writePhoto("carro.png", Color.BLUE);
         interact(() -> newVehicle.selectFile(photo));
+        interact(() -> lookup("#nameField").queryAs(TextField.class).setText("Error"));
         Button generate = lookup("Generar modelo").queryButton();
         waitFor(() -> !generate.isDisabled());
         clickOn(generate);
         clickOn("Generar");
 
-        waitFor(() -> lookup("El servicio de IA falló. No se descontó tu cuota.").tryQuery().isPresent());
+        waitFor(() -> lookup("El servicio de IA falló. No se descontaron tus créditos.").tryQuery().isPresent());
         clickOn("Detalles");
         waitFor(() -> lookup(n -> n instanceof Label l && l.getText() != null && l.getText().contains("abc123"))
                 .tryQuery().isPresent());
@@ -218,11 +240,95 @@ class GenerationFlowUiTest extends FxRobot {
         assertTrue(context().garage().list().isEmpty());
     }
 
+    /** Si el backend dice que no quedan créditos (402), se muestran los planes y el saldo queda en cero. */
+    @Test
+    void backendWithoutCreditsShowsPricingPlans() throws Exception {
+        generationMode.set("no-credits");
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        clickOn("+ Nuevo vehículo");
+        NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
+        Path photo = writePhoto("carro.jpg", Color.RED);
+        interact(() -> newVehicle.selectFile(photo));
+        interact(() -> lookup("#nameField").queryAs(TextField.class).setText("Sin saldo"));
+        Button generate = lookup("Generar modelo").queryButton();
+        waitFor(() -> !generate.isDisabled());
+        clickOn(generate);
+        clickOn("Generar");
+
+        waitFor(() -> lookup("Te quedaste sin créditos").tryQuery().isPresent());
+        assertEquals(0, context().session().getCredits());
+        assertEquals(0, context().settings().get().credits);
+        clickOn("Ahora no");
+        waitFor(() -> lookup("0 créditos").tryQuery().isPresent());
+    }
+
+    @Test
+    void noCreditsShowsPricingPlans() throws Exception {
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        interact(() -> context().session().creditsProperty().set(10));
+        waitFor(() -> lookup("10 créditos").tryQuery().isPresent());
+
+        clickOn("+ Nuevo vehículo");
+        waitFor(() -> lookup("Te quedaste sin créditos").tryQuery().isPresent());
+        snapshotWindow("09-planes.png");
+        assertEquals(3, lookup(".plan-card").queryAll().size());
+        clickOn("Ahora no");
+        assertTrue(lookup("Mi garaje").tryQuery().isPresent());
+        assertEquals(0, generationCalls.get());
+    }
+
+    /**
+     * Sin créditos el backend también informa la cuota en cero: el botón sigue activo y lleva a los planes, en vez de
+     * bloquearse con el aviso del límite diario.
+     */
+    @Test
+    void backendOutOfCreditsStillOffersPlans() throws Exception {
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        remaining.set(0);
+        credits.set(0);
+        context().serverMonitor().refreshQuota();
+        waitFor(() -> lookup("0 créditos").tryQuery().isPresent());
+
+        Button newVehicle = lookup("+ Nuevo vehículo").queryButton();
+        assertFalse(newVehicle.isDisabled());
+        clickOn(newVehicle);
+        waitFor(() -> lookup("Te quedaste sin créditos").tryQuery().isPresent());
+        clickOn("Ahora no");
+        assertEquals(0, generationCalls.get());
+    }
+
+    /** Con créditos pero sin cupo diario de la red, el botón se bloquea y explica cuándo se renueva. */
+    @Test
+    void dailyNetworkLimitBlocksNewVehicleWithReason() throws Exception {
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        remaining.set(0);
+        context().serverMonitor().refreshQuota();
+        Button newVehicle = lookup("+ Nuevo vehículo").queryButton();
+        waitFor(newVehicle::isDisabled);
+        assertEquals(45, context().session().getCredits());
+        Tooltip tooltip = (Tooltip) lookup("#newVehicleWrapper").query().getProperties().get("javafx.scene.control.Tooltip");
+        assertTrue(tooltip.getText().startsWith("Alcanzaste el máximo de modelos de hoy desde esta red"),
+                tooltip.getText());
+    }
+
+    @Test
+    void aboutDialogListsLicensesAndInstallationId() throws Exception {
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        clickOn(".help-menu");
+        clickOn("Acerca de TunAI");
+        waitFor(() -> lookup("Licencias de terceros").tryQuery().isPresent());
+        snapshotWindow("10-acerca-de.png");
+        assertFalse(lookup(".license-row").queryAll().isEmpty());
+        clickOn("Copiar");
+        assertTrue(lookup("Copiado").tryQuery().isPresent());
+        clickOn("Aceptar");
+    }
+
     /** CA-UI-12: una foto que no es un vehículo se rechaza sin llamar al backend. */
     @Test
     void nonVehiclePhotoBlocksGeneration() throws Exception {
         context().settings().get().classifier.enabled = true;
-        waitFor(() -> lookup("Hoy: 0 de 2").tryQuery().isPresent());
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
         clickOn("+ Nuevo vehículo");
         NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
         Path photo = writePhoto("cuadro.jpg", Color.BLACK);

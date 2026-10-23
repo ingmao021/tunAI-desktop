@@ -40,7 +40,7 @@ public class NewVehicleController implements NavigationAware {
     private static final double PREVIEW_MARGIN = 24;
 
     private final AppContext context;
-    private final ChangeListener<Quota> quotaListener = (obs, o, n) -> updateQuota();
+    private final ChangeListener<Object> quotaListener = (obs, o, n) -> updateQuota();
 
     @FXML
     private StackPane dropZone;
@@ -80,18 +80,25 @@ public class NewVehicleController implements NavigationAware {
         dropZone.setOnDragDropped(this::onDragDropped);
         nameField.textProperty().addListener((obs, o, n) -> updateGenerateButton());
         context.session().quotaProperty().addListener(quotaListener);
+        context.session().creditsProperty().addListener(quotaListener);
+        context.session().creditsPerModelProperty().addListener(quotaListener);
         updateQuota();
         setStatus(null, null);
     }
 
     private void updateQuota() {
-        quotaWarning.setText(QuotaText.generationWarning(context.session().getQuota()));
+        Quota quota = context.session().getQuota();
+        int credits = context.session().getCredits();
+        int perModel = context.session().getCreditsPerModel();
+        quotaWarning.setText(Credits.dailyLimitReached(quota, credits, perModel)
+                ? Credits.dailyLimitMessage(quota) : Credits.generationWarning(credits, perModel));
+        quotaWarning.setGraphic(Credits.icon(16));
         updateGenerateButton();
     }
 
     private void updateGenerateButton() {
         Quota quota = context.session().getQuota();
-        boolean quotaLeft = quota == null || !quota.exhausted();
+        boolean quotaLeft = (quota == null || !quota.exhausted()) && context.session().canGenerate();
         generateButton.setDisable(photo == null || !vehicleConfirmed || nameField.getText().isBlank() || !quotaLeft
                 || !context.settings().get().hasConsent());
     }
@@ -260,7 +267,7 @@ public class NewVehicleController implements NavigationAware {
             return;
         }
         boolean confirmed = Dialogs.confirm(context.stage(), "Generar modelo",
-                "Vas a usar 1 de tus generaciones. ¿Continuar?", "Generar");
+                Credits.confirmMessage(context.session().getCreditsPerModel()), "Generar");
         if (!confirmed) {
             return;
         }
@@ -280,5 +287,7 @@ public class NewVehicleController implements NavigationAware {
     public void onLeave() {
         selection++;
         context.session().quotaProperty().removeListener(quotaListener);
+        context.session().creditsProperty().removeListener(quotaListener);
+        context.session().creditsPerModelProperty().removeListener(quotaListener);
     }
 }

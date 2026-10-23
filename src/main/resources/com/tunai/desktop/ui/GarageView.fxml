@@ -1,54 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import atlantafx.base.controls.Spacer?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.tunai.desktop.ui.GarageController">
-    <top>
-        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="18">
-            <Label text="TunAI" styleClass="app-name"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="serverStatusLabel" styleClass="status-dot"/>
-            <Label fx:id="quotaLabel" styleClass="muted"/>
-            <MenuButton text="?" styleClass="help-menu">
-                <items>
-                    <MenuItem text="Acerca de TunAI" onAction="#onAbout"/>
-                </items>
-            </MenuButton>
-        </HBox>
-    </top>
-    <center>
-        <VBox spacing="20">
-            <padding>
-                <Insets top="24" right="32" bottom="24" left="32"/>
-            </padding>
-            <HBox alignment="CENTER_LEFT">
-                <Label text="Mi garaje" styleClass="title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <!-- Contenedor para mostrar el tooltip aun con el botón deshabilitado -->
-                <StackPane fx:id="newVehicleWrapper">
-                    <Button fx:id="newVehicleButton" text="+ Nuevo vehículo" styleClass="primary"
-                            onAction="#onNewVehicle"/>
-                </StackPane>
-            </HBox>
-            <StackPane VBox.vgrow="ALWAYS">
-                <ScrollPane fx:id="cardsScroll" fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
-                    <FlowPane fx:id="cardsPane" hgap="18" vgap="18"/>
-                </ScrollPane>
-                <Label fx:id="emptyLabel" styleClass="muted" style="-fx-font-size: 16px;"
-                       text="Aún no tienes vehículos. Crea el primero con + Nuevo vehículo"/>
+<!-- Garaje con componentes de AtlantaFX: las tarjetas (Card + Tile) se crean en GarageController.
+     Sin barra superior: el estado del servidor y los créditos flotan abajo a la derecha. -->
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tunai.desktop.ui.GarageController">
+    <VBox spacing="26">
+        <padding>
+            <Insets top="26" right="12" bottom="24" left="26"/>
+        </padding>
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="0">
+                <Label text="Mi garaje" styleClass="title-1, page-title"/>
+                <Label fx:id="countLabel" styleClass="text-muted"/>
+            </VBox>
+            <Spacer/>
+            <!-- Contenedor para mostrar el tooltip aun con el botón deshabilitado -->
+            <StackPane fx:id="newVehicleWrapper">
+                <Button fx:id="newVehicleButton" text="+ Nuevo vehículo" styleClass="accent, large"
+                        onAction="#onNewVehicle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdal-directions_car"/>
+                    </graphic>
+                </Button>
             </StackPane>
-        </VBox>
-    </center>
-</BorderPane>
+        </HBox>
+        <StackPane VBox.vgrow="ALWAYS">
+            <ScrollPane fx:id="cardsScroll" fitToWidth="true" styleClass="edge-to-edge, garage-scroll">
+                <FlowPane fx:id="cardsPane" hgap="22" vgap="22">
+                    <padding>
+                        <Insets top="8" right="8" bottom="72" left="8"/>
+                    </padding>
+                </FlowPane>
+            </ScrollPane>
+            <VBox fx:id="emptyState" styleClass="empty-state" alignment="CENTER" spacing="14"
+                  maxWidth="510" maxHeight="-Infinity">
+                <StackPane styleClass="icon-badge">
+                    <FontIcon iconLiteral="mdal-directions_car"/>
+                </StackPane>
+                <Label text="Tu garaje está vacío" styleClass="title-3"/>
+                <Label fx:id="emptyLabel" styleClass="text-muted" wrapText="true"
+                       text="Aún no tienes vehículos. Crea el primero con + Nuevo vehículo"/>
+            </VBox>
+        </StackPane>
+    </VBox>
+    <HBox StackPane.alignment="BOTTOM_RIGHT" alignment="CENTER_RIGHT" spacing="12"
+          maxWidth="-Infinity" maxHeight="-Infinity" pickOnBounds="false">
+        <StackPane.margin>
+            <Insets right="14" bottom="18"/>
+        </StackPane.margin>
+        <HBox styleClass="header-pill, floating-pill" alignment="CENTER" spacing="14">
+            <Label fx:id="serverStatusLabel" styleClass="status-dot, text-small"/>
+            <Region styleClass="top-bar-divider" prefHeight="16" maxHeight="16"/>
+            <Label fx:id="quotaLabel" styleClass="text-small, text-bold"/>
+        </HBox>
+        <MenuButton styleClass="help-menu, button-circle, flat, no-arrow">
+            <graphic>
+                <FontIcon iconLiteral="mdal-help_outline" iconSize="20"/>
+            </graphic>
+            <items>
+                <MenuItem text="Acerca de TunAI" onAction="#onAbout">
+                    <graphic>
+                        <FontIcon iconLiteral="mdal-info"/>
+                    </graphic>
+                </MenuItem>
+            </items>
+        </MenuButton>
+    </HBox>
+</StackPane>

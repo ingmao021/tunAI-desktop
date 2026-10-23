@@ -17,7 +17,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.Paint;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
@@ -40,7 +44,9 @@ public class ModelViewer extends Pane {
     static final double MIN_DISTANCE = GlbModel.TARGET_SIZE * 0.95;
     static final double MAX_DISTANCE = 1400;
     static final double AUTO_ROTATE_DEG_PER_SEC = 18;
-    private static final Color BACKGROUND = Color.web("#eef1f5");
+    /** Fondo de estudio claro: foco blanco tras el vehículo que se vuelve gris perla hacia los bordes. */
+    private static final Paint BACKGROUND = new RadialGradient(0, 0, 0.5, 0.4, 0.8, true, CycleMethod.NO_CYCLE,
+            new Stop(0, Color.web("#ffffff")), new Stop(0.55, Color.web("#eef1f5")), new Stop(1, Color.web("#d5dbe3")));
 
     private final Group modelGroup = new Group();
     private final PhongMaterial material = new PhongMaterial(Color.WHITE);

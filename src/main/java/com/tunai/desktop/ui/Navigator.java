@@ -1,9 +1,11 @@
 package com.tunai.desktop.ui;
 
 import com.tunai.desktop.AppContext;
+import javafx.animation.FadeTransition;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,6 +28,8 @@ public class Navigator {
             this.fxml = fxml;
         }
     }
+
+    private static final Duration FADE_IN = Duration.millis(220);
 
     private final Scene scene;
     private final AppContext context;
@@ -64,6 +68,10 @@ public class Navigator {
         init.accept(controller);
         currentController = controller;
         scene.setRoot(root);
+        FadeTransition fade = new FadeTransition(FADE_IN, root);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        fade.play();
         return true;
     }
 

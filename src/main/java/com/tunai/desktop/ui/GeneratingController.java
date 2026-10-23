@@ -20,6 +20,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -80,7 +81,7 @@ public class GeneratingController implements NavigationAware {
         setStep(stepValidated, "Foto validada", StepState.DONE);
         stepWake.setVisible(!serverReady);
         stepWake.setManaged(!serverReady);
-        setStep(stepWake, "Despertando el servidor…  (puede tardar ~1 min)", StepState.PENDING);
+        setStep(stepWake, "Calentando motores del taller 3D…  (puede tardar ~1 min)", StepState.PENDING);
         setStep(stepGenerate, "Generando modelo 3D", StepState.PENDING);
         setStep(stepPrepare, "Preparando visor", StepState.PENDING);
         cancelButton.setDisable(false);
@@ -109,6 +110,8 @@ public class GeneratingController implements NavigationAware {
             GenerationResult result = context.api().generate(photo.bytes(), photo.fileName(),
                     photo.format().mimeType(), myCancel);
             context.serverMonitor().markReady();
+            // El backend ya entregó el modelo: se cobra aunque luego no se pueda abrir en el visor.
+            Platform.runLater(context::spendModelCredits);
             if (result.quota() != null) {
                 context.serverMonitor().updateQuota(result.quota());
             } else {
@@ -185,6 +188,12 @@ public class GeneratingController implements NavigationAware {
         if (error.quota() != null) {
             context.serverMonitor().updateQuota(error.quota());
         }
+        if (error.code().action() == ErrorCode.Action.SHOW_PLANS) {
+            context.syncCredits(0);
+            goToGarage();
+            PricingDialog.show(context.stage(), context.session().getCreditsPerModel());
+            return;
+        }
 
         ErrorDialog.Choice choice = ErrorDialog.show(context.stage(), error);
         switch (error.code().action()) {
@@ -206,14 +215,14 @@ public class GeneratingController implements NavigationAware {
                 context.installationId().regenerate();
                 goToGarage();
             }
-            case STAY, BACK_TO_GARAGE -> goToGarage();
+            case STAY, BACK_TO_GARAGE, SHOW_PLANS -> goToGarage();
         }
     }
 
     /** CA-UI-05: cada generación, incluido un reintento manual, pide confirmación. */
     private boolean confirmRetry() {
         return Dialogs.confirm(context.stage(), "Reintentar",
-                "Vas a usar 1 de tus generaciones. ¿Continuar?", "Generar");
+                Credits.confirmMessage(context.session().getCreditsPerModel()), "Generar");
     }
 
     private void goToGarage() {
@@ -276,21 +285,20 @@ public class GeneratingController implements NavigationAware {
     private static void setStep(Label label, String text, StepState state) {
         String base = text != null ? text : (String) label.getUserData();
         label.setUserData(base);
-        label.getStyleClass().removeAll("step-pending", "step-done");
+        label.getStyleClass().removeAll("step-pending", "step-active", "step-done");
+        label.setText(base);
         switch (state) {
             case PENDING -> {
-                label.setText("○  " + base);
+                label.setGraphic(new FontIcon("mdmz-radio_button_unchecked"));
                 label.getStyleClass().add("step-pending");
-                label.setStyle("");
             }
             case ACTIVE -> {
-                label.setText("◌  " + base);
-                label.setStyle("-fx-font-weight: bold;");
+                label.setGraphic(new FontIcon("mdal-autorenew"));
+                label.getStyleClass().add("step-active");
             }
             case DONE -> {
-                label.setText("✓  " + base);
+                label.setGraphic(new FontIcon("mdal-check_circle"));
                 label.getStyleClass().add("step-done");
-                label.setStyle("");
             }
         }
     }

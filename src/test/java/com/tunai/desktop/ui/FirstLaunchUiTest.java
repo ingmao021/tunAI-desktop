@@ -3,12 +3,15 @@ package com.tunai.desktop.ui;
 import com.tunai.desktop.App;
 import javafx.application.Application;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.stage.Stage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testfx.api.FxRobot;
 import org.testfx.api.FxToolkit;
+import org.testfx.util.WaitForAsyncUtils;
 
 import java.nio.file.Path;
 
@@ -37,12 +40,19 @@ class FirstLaunchUiTest extends FxRobot {
         // Servidor inexistente: el garaje debe funcionar igual.
         System.setProperty("tunai.api.url", "http://127.0.0.1:9");
 
-        FxToolkit.registerPrimaryStage();
+        Stage stage = FxToolkit.registerPrimaryStage();
         app = FxToolkit.setupApplication(App.class);
-
+        // Con otra ventana en primer plano (p. ej. al correr toda la suite), Windows descarta el primer clic.
+        interact(stage::toFront);
         Button start = lookup("Empezar").queryButton();
         assertTrue(start.isDisabled());
-        clickOn("Acepto el envío de mis fotos para generar modelos");
+        // Primera ventana del proceso: Windows a veces ignora un clic inmediato al mostrarla.
+        // Se entra primero con el mouse y se espera a que JavaFX procese el movimiento.
+        CheckBox accept = lookup("#acceptCheck").queryAs(CheckBox.class);
+        moveTo(accept);
+        WaitForAsyncUtils.waitForFxEvents();
+        clickOn(accept);
+        assertTrue(accept.isSelected());
         assertFalse(start.isDisabled());
         clickOn(start);
 
