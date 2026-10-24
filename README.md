@@ -68,7 +68,15 @@ El instalador queda en `target\installer\`. El `--win-upgrade-uuid` no debe camb
 
 ## Datos locales
 
-Todo vive en `%APPDATA%\TunAI\`:
+Todo vive en la carpeta de datos de usuario de cada sistema (`AppPaths`):
+
+| Sistema | Carpeta |
+|---|---|
+| Windows | `%APPDATA%\TunAI\` |
+| macOS | `~/Library/Application Support/TunAI/` |
+| Linux | `$XDG_DATA_HOME/TunAI/` (por defecto `~/.local/share/TunAI/`) |
+
+La 1.0.0 usaba `~/AppData/Roaming/TunAI` también en macOS y Linux; al abrir una versión nueva esa carpeta se mueve sola a la nueva ubicación.
 
 | Archivo | Contenido |
 |---|---|
@@ -95,6 +103,8 @@ Todo vive en `%APPDATA%\TunAI\`:
 
 Incluyen pruebas de UI con TestFX que abren ventanas: no muevas el mouse mientras corren. Las capturas de cada pantalla quedan en `target\ui-snapshots\`.
 
+En GitHub, [`ci.yml`](.github/workflows/ci.yml) corre `mvnw verify` (con las pruebas de UI) en Windows en cada push a `main` o `develop` y en cada PR. Antes de crear el instalador, `release.yml` abre la app empaquetada en Windows, macOS y Linux y exige en su log el arranque y la carga del clasificador.
+
 ## Decisiones que conviene conocer
 
 - **La generación nunca se reintenta sola.** Cada generación (también un reintento manual) pide confirmación.
@@ -109,11 +119,11 @@ Incluyen pruebas de UI con TestFX que abren ventanas: no muevas el mouse mientra
 | Tema | Estado |
 |---|---|
 | Texto legal de consentimiento (Ley 1581) | PENDIENTE; reemplazar `src/main/resources/com/tunai/desktop/legal/consent-*.txt` |
-| Atribución o términos exigidos por Tripo AI | PENDIENTE DE VALIDAR; `legal/attribution.txt` y `consent-*.txt` aún nombran también a Stability AI |
+| Atribución o términos exigidos por Tripo AI | PENDIENTE DE VALIDAR con sus términos; `legal/attribution.txt` y `consent-*.txt` ya nombran solo a Tripo AI |
 | Licencia de los pesos de MobileNetV2 | PENDIENTE DE VALIDAR (el Model Zoo indica Apache-2.0) |
 | Rines | PENDIENTE (PRD frontend §17); no implementado |
-| Logo, colores de marca y tipografía | PENDIENTE; colores centralizados en `styles/app.css` |
-| Ajuste de la máscara de pintura con el GLB real | Tras el ensayo |
+| Logo, colores de marca y tipografía | Rediseño aplicado (icono, Rajdhani, tokens en `styles/app.css`); falta la validación final de marca |
+| Ajuste de la máscara de pintura y del visor con un GLB real de Tripo | Tras la primera generación pagada (la máscara está ajustada con SF3D) |
 | Calibración con fotos propias del equipo | Antes del ensayo |
-| Datos en macOS y Linux | Hoy van a `~/AppData/Roaming/TunAI`; lo propio es `~/Library/Application Support` y `~/.local/share` (`AppPaths`) |
-| Firma de los instaladores | Sin firmar: Windows SmartScreen y macOS Gatekeeper avisan la primera vez |
+| Firma de los instaladores | Sin firmar: Windows SmartScreen y macOS Gatekeeper avisan la primera vez. Requiere certificado de firma de código (Windows) y cuenta de Apple Developer (macOS) |
+| macOS Intel | El `.dmg` es solo para Apple Silicon |
