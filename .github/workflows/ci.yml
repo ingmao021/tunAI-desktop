@@ -19,6 +19,12 @@ jobs:
           java-version: '21'
           cache: maven
 
+      # La pantalla del runner es de 1024x768, menor que la ventana mínima (1280x720): sin esto los botones de los
+      # bordes quedan fuera de la pantalla y el robot de TestFX no puede hacer clic en ellos
+      - name: Resolución de pantalla
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
       - name: mvn verify
         run: ./mvnw -B verify
 

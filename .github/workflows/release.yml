@@ -124,9 +124,11 @@ jobs:
         timeout-minutes: 3
         run: |
           LOG="$DATA_DIR/logs/tunai0.log"
-          # Solo cuentan las líneas de esta ejecución
-          BEFORE=$(cat "$LOG" 2>/dev/null | wc -l)
-          run_log() { tail -n +$((BEFORE + 1)) "$LOG" 2>/dev/null; }
+          RUN_LOG="$RUNNER_TEMP/run.log"
+          # Solo cuentan las líneas de esta ejecución (el log puede no existir todavía)
+          BEFORE=0
+          if [ -f "$LOG" ]; then BEFORE=$(wc -l < "$LOG"); fi
+          snapshot() { if [ -f "$LOG" ]; then tail -n +$((BEFORE + 1)) "$LOG" > "$RUN_LOG"; else : > "$RUN_LOG"; fi; }
           if [ "$RUNNER_OS" = Linux ]; then
             xvfb-run -a "$LAUNCHER" > "$RUNNER_TEMP/stdout.log" 2>&1 &
           else
@@ -134,15 +136,17 @@ jobs:
           fi
           ok=false
           for i in $(seq 1 90); do
-            if run_log | grep -q "Clasificador cargado"; then ok=true; break; fi
+            snapshot
+            if grep -q "Clasificador cargado" "$RUN_LOG"; then ok=true; break; fi
             sleep 1
           done
-          echo "--- $LOG"; run_log || echo "(sin log)"
+          snapshot
+          echo "--- $LOG"; cat "$RUN_LOG"
           echo "--- salida"; cat "$RUNNER_TEMP/stdout.log"
           if [ "$RUNNER_OS" = Windows ]; then taskkill //IM "$NAME.exe" //F || true; else pkill -f app-image || true; fi
-          run_log | grep -q "Iniciando TunAI $VERSION"
+          grep -q "Iniciando TunAI $VERSION" "$RUN_LOG"
           $ok
-          if run_log | grep -E "SEVERE|GRAVE"; then exit 1; fi
+          if grep -E "SEVERE|GRAVE" "$RUN_LOG"; then exit 1; fi
 
       - name: Instalador
         run: |
