@@ -75,9 +75,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/wix" && unzip -q wix.zip -d "$RUNNER_TEMP/wix"
           echo "$RUNNER_TEMP/wix" >> "$GITHUB_PATH"
 
-      - name: fakeroot (Linux)
+      # fakeroot para el .deb; Xvfb y GTK para abrir la app en la prueba de humo
+      - name: Paquetes (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y fakeroot
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q fakeroot xvfb libgtk-3-0t64 libgl1
 
       - name: Icono .icns (macOS)
         if: runner.os == 'macOS'
@@ -91,20 +94,67 @@ jobs:
           done
           iconutil -c icns "$ICONSET" -o "$RUNNER_TEMP/TunAI.icns"
 
-      - name: jpackage
+      # Nombre, icono, ejecutable y carpeta de datos (AppPaths) de cada sistema
+      - name: Rutas del sistema
         run: |
-          COMMON=(--type ${{ matrix.type }} --app-version "$VERSION" --vendor "$VENDOR"
-                  --description "$DESCRIPTION" --input target/app --main-jar "$MAIN_JAR"
-                  --main-class "$MAIN_CLASS" --dest target/installer)
           case "$RUNNER_OS" in
             Windows)
-              jpackage "${COMMON[@]}" --name "$APP_NAME" --icon src/main/resources/icon.ico \
-                --win-menu --win-shortcut --win-dir-chooser --win-upgrade-uuid "$WIN_UPGRADE_UUID" ;;
+              { echo "NAME=$APP_NAME"; echo "ICON=src/main/resources/icon.ico"
+                echo "IMAGE=target/app-image/$APP_NAME"; echo "LAUNCHER=target/app-image/$APP_NAME/$APP_NAME.exe"
+                echo "DATA_DIR=$APPDATA/TunAI"; } >> "$GITHUB_ENV" ;;
             macOS)
-              jpackage "${COMMON[@]}" --name "$APP_NAME" --icon "$RUNNER_TEMP/TunAI.icns" ;;
+              { echo "NAME=$APP_NAME"; echo "ICON=$RUNNER_TEMP/TunAI.icns"
+                echo "IMAGE=target/app-image/$APP_NAME.app"; echo "LAUNCHER=target/app-image/$APP_NAME.app/Contents/MacOS/$APP_NAME"
+                echo "DATA_DIR=$HOME/Library/Application Support/TunAI"; } >> "$GITHUB_ENV" ;;
             Linux)
-              jpackage "${COMMON[@]}" --name tunai --icon src/main/resources/com/tunai/desktop/icons/icon-256.png \
-                --linux-shortcut --linux-menu-group Graphics --linux-app-category graphics ;;
+              { echo "NAME=tunai"; echo "ICON=src/main/resources/com/tunai/desktop/icons/icon-256.png"
+                echo "IMAGE=target/app-image/tunai"; echo "LAUNCHER=target/app-image/tunai/bin/tunai"
+                echo "DATA_DIR=$HOME/.local/share/TunAI"; } >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: App empaquetada
+        run: |
+          jpackage --type app-image --name "$NAME" --app-version "$VERSION" --vendor "$VENDOR" \
+            --description "$DESCRIPTION" --input target/app --main-jar "$MAIN_JAR" --main-class "$MAIN_CLASS" \
+            --icon "$ICON" --dest target/app-image
+
+      # Abre la app tal como se va a instalar y exige en su log el arranque y el clasificador ONNX (librería
+      # nativa de cada sistema), en la carpeta de datos propia del sistema. No genera nada ni gasta créditos.
+      - name: Prueba de humo
+        timeout-minutes: 3
+        run: |
+          LOG="$DATA_DIR/logs/tunai0.log"
+          # Solo cuentan las líneas de esta ejecución
+          BEFORE=$(cat "$LOG" 2>/dev/null | wc -l)
+          run_log() { tail -n +$((BEFORE + 1)) "$LOG" 2>/dev/null; }
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a "$LAUNCHER" > "$RUNNER_TEMP/stdout.log" 2>&1 &
+          else
+            "$LAUNCHER" > "$RUNNER_TEMP/stdout.log" 2>&1 &
+          fi
+          ok=false
+          for i in $(seq 1 90); do
+            if run_log | grep -q "Clasificador cargado"; then ok=true; break; fi
+            sleep 1
+          done
+          echo "--- $LOG"; run_log || echo "(sin log)"
+          echo "--- salida"; cat "$RUNNER_TEMP/stdout.log"
+          if [ "$RUNNER_OS" = Windows ]; then taskkill //IM "$NAME.exe" //F || true; else pkill -f app-image || true; fi
+          run_log | grep -q "Iniciando TunAI $VERSION"
+          $ok
+          if run_log | grep -E "SEVERE|GRAVE"; then exit 1; fi
+
+      - name: Instalador
+        run: |
+          ARGS=(--type ${{ matrix.type }} --app-image "$IMAGE"
+                --name "$NAME" --app-version "$VERSION" --vendor "$VENDOR" --description "$DESCRIPTION"
+                --dest target/installer)
+          case "$RUNNER_OS" in
+            Windows) jpackage "${ARGS[@]}" --win-menu --win-shortcut --win-dir-chooser \
+                       --win-upgrade-uuid "$WIN_UPGRADE_UUID" ;;
+            macOS)   jpackage "${ARGS[@]}" ;;
+            Linux)   jpackage "${ARGS[@]}" --linux-shortcut --linux-menu-group Graphics \
+                       --linux-app-category graphics ;;
           esac
           ls -la target/installer
 
