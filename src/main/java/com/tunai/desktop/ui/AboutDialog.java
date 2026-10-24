@@ -40,7 +40,7 @@ final class AboutDialog {
     }
 
     static void show(AppContext context) {
-        // Texto exacto de atribución exigido por la licencia de Stability AI: PENDIENTE DE VALIDAR (§10).
+        // Atribución de Tripo AI: si sus términos exigen un texto exacto, PENDIENTE DE VALIDAR (§10).
         Label credit = new Label(Resources.text("/com/tunai/desktop/legal/attribution.txt").strip());
         credit.setWrapText(true);
         credit.getStyleClass().add("muted");

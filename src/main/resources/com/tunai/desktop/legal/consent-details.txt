@@ -4,7 +4,7 @@
 Solo la foto que eliges para generar el modelo 3D, junto con un identificador anónimo de esta instalación. No se piden nombre, correo ni cuentas.
 
 ¿A quién y para qué?
-La foto pasa por el servidor de TunAI y se envía a un proveedor de inteligencia artificial ubicado fuera de Colombia (Tripo AI o Stability AI, según el que esté activo en el servidor), con el único fin de generar el modelo 3D de tu vehículo.
+La foto pasa por el servidor de TunAI y se envía a un proveedor de inteligencia artificial ubicado fuera de Colombia (Tripo AI), con el único fin de generar el modelo 3D de tu vehículo.
 
 ¿Se guarda la foto?
 TunAI no guarda la foto. El modelo 3D resultante se guarda solo en este computador, en tu garaje local, y nunca se sube al servidor.
