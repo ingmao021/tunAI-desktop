@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-/** Envía el log a {@code %APPDATA%\TunAI\logs\tunai.log} (rotación de 3 archivos de 2 MB). */
+/** Envía el log a {@code logs/tunai.log} en la carpeta de datos ({@code AppPaths}), con rotación de 3 archivos de 2 MB. */
 final class LoggingSetup {
 
     private static FileHandler handler;

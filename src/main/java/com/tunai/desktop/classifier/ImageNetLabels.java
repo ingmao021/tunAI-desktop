@@ -40,7 +40,7 @@ public final class ImageNetLabels {
     }
 
     /**
-     * @param vehicleOverride {@code %APPDATA%\TunAI\vehicle-classes.txt}; si existe reemplaza la lista incluida
+     * @param vehicleOverride {@code vehicle-classes.txt} en la carpeta de datos; si existe reemplaza la lista incluida
      */
     public static ImageNetLabels load(Path vehicleOverride) throws IOException {
         List<String> names = new ArrayList<>(1000);
