@@ -1,0 +1,193 @@
+# Instaladores nativos con jpackage (Java incluido) y Release de GitHub.
+# jpackage no compila para otro sistema: cada instalador se arma en su propio runner.
+# Uso: git tag v1.0.0 && git push origin v1.0.0  (o "Run workflow" para probar sin publicar)
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+    # Si cambia este workflow, arma los instaladores para probarlo (solo un tag publica la Release)
+    branches: [develop]
+    paths: ['.github/workflows/release.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: TunAI
+  MAIN_JAR: tunai-desktop.jar
+  MAIN_CLASS: com.tunai.desktop.Launcher
+  VENDOR: TunAI
+  DESCRIPTION: Mira tu carro en 3D y pruébale colores nuevos
+  # Fijo para siempre: permite que un instalador nuevo de Windows reemplace al anterior
+  WIN_UPGRADE_UUID: f31c8be9-4220-4bca-8eaf-1ee788b073d9
+
+jobs:
+  package:
+    name: Instalador ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            type: exe
+          - os: macos-latest
+            label: macOS (Apple Silicon)
+            type: dmg
+          - os: ubuntu-latest
+            label: Linux
+            type: deb
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # v1.2.3 -> 1.2.3; sin tag (ejecución manual) se usa la versión del pom
+      - name: Versión
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            ./mvnw -B -q versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+          else
+            VERSION=$(./mvnw -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      # Las pruebas de UI necesitan escritorio y se corren antes de crear el tag (README)
+      - name: Compilar
+        run: ./mvnw -B package -DskipTests
+
+      # El jpackage de JDK 21 solo admite WiX 3
+      - name: WiX 3.14 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          curl -sSL -o wix.zip https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip
+          mkdir -p "$RUNNER_TEMP/wix" && unzip -q wix.zip -d "$RUNNER_TEMP/wix"
+          echo "$RUNNER_TEMP/wix" >> "$GITHUB_PATH"
+
+      # fakeroot para el .deb; Xvfb y GTK para abrir la app en la prueba de humo
+      - name: Paquetes (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q fakeroot xvfb libgtk-3-0t64 libgl1
+
+      - name: Icono .icns (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          ICONSET="$RUNNER_TEMP/TunAI.iconset"
+          mkdir -p "$ICONSET"
+          for size in 16 32 128 256 512; do
+            sips -z $size $size src/resource/icon.png --out "$ICONSET/icon_${size}x${size}.png" > /dev/null
+            double=$((size * 2))
+            sips -z $double $double src/resource/icon.png --out "$ICONSET/icon_${size}x${size}@2x.png" > /dev/null
+          done
+          iconutil -c icns "$ICONSET" -o "$RUNNER_TEMP/TunAI.icns"
+
+      # Nombre, icono, ejecutable y carpeta de datos (AppPaths) de cada sistema
+      - name: Rutas del sistema
+        run: |
+          case "$RUNNER_OS" in
+            Windows)
+              { echo "NAME=$APP_NAME"; echo "ICON=src/main/resources/icon.ico"
+                echo "IMAGE=target/app-image/$APP_NAME"; echo "LAUNCHER=target/app-image/$APP_NAME/$APP_NAME.exe"
+                echo "DATA_DIR=$APPDATA/TunAI"; } >> "$GITHUB_ENV" ;;
+            macOS)
+              { echo "NAME=$APP_NAME"; echo "ICON=$RUNNER_TEMP/TunAI.icns"
+                echo "IMAGE=target/app-image/$APP_NAME.app"; echo "LAUNCHER=target/app-image/$APP_NAME.app/Contents/MacOS/$APP_NAME"
+                echo "DATA_DIR=$HOME/Library/Application Support/TunAI"; } >> "$GITHUB_ENV" ;;
+            Linux)
+              { echo "NAME=tunai"; echo "ICON=src/main/resources/com/tunai/desktop/icons/icon-256.png"
+                echo "IMAGE=target/app-image/tunai"; echo "LAUNCHER=target/app-image/tunai/bin/tunai"
+                echo "DATA_DIR=$HOME/.local/share/TunAI"; } >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: App empaquetada
+        run: |
+          jpackage --type app-image --name "$NAME" --app-version "$VERSION" --vendor "$VENDOR" \
+            --description "$DESCRIPTION" --input target/app --main-jar "$MAIN_JAR" --main-class "$MAIN_CLASS" \
+            --icon "$ICON" --dest target/app-image
+
+      # Abre la app tal como se va a instalar y exige en su log el arranque y el clasificador ONNX (librería
+      # nativa de cada sistema), en la carpeta de datos propia del sistema. No genera nada ni gasta créditos.
+      - name: Prueba de humo
+        timeout-minutes: 3
+        run: |
+          LOG="$DATA_DIR/logs/tunai0.log"
+          RUN_LOG="$RUNNER_TEMP/run.log"
+          # Solo cuentan las líneas de esta ejecución (el log puede no existir todavía)
+          BEFORE=0
+          if [ -f "$LOG" ]; then BEFORE=$(wc -l < "$LOG"); fi
+          snapshot() { if [ -f "$LOG" ]; then tail -n +$((BEFORE + 1)) "$LOG" > "$RUN_LOG"; else : > "$RUN_LOG"; fi; }
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a "$LAUNCHER" > "$RUNNER_TEMP/stdout.log" 2>&1 &
+          else
+            "$LAUNCHER" > "$RUNNER_TEMP/stdout.log" 2>&1 &
+          fi
+          ok=false
+          for i in $(seq 1 90); do
+            snapshot
+            if grep -q "Clasificador cargado" "$RUN_LOG"; then ok=true; break; fi
+            sleep 1
+          done
+          snapshot
+          echo "--- $LOG"; cat "$RUN_LOG"
+          echo "--- salida"; cat "$RUNNER_TEMP/stdout.log"
+          if [ "$RUNNER_OS" = Windows ]; then taskkill //IM "$NAME.exe" //F || true; else pkill -f app-image || true; fi
+          grep -q "Iniciando TunAI $VERSION" "$RUN_LOG"
+          $ok
+          if grep -E "SEVERE|GRAVE" "$RUN_LOG"; then exit 1; fi
+
+      - name: Instalador
+        run: |
+          ARGS=(--type ${{ matrix.type }} --app-image "$IMAGE"
+                --name "$NAME" --app-version "$VERSION" --vendor "$VENDOR" --description "$DESCRIPTION"
+                --dest target/installer)
+          case "$RUNNER_OS" in
+            Windows) jpackage "${ARGS[@]}" --win-menu --win-shortcut --win-dir-chooser \
+                       --win-upgrade-uuid "$WIN_UPGRADE_UUID" ;;
+            macOS)   jpackage "${ARGS[@]}" ;;
+            Linux)   jpackage "${ARGS[@]}" --linux-shortcut --linux-menu-group Graphics \
+                       --linux-app-category graphics ;;
+          esac
+          ls -la target/installer
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instalador-${{ matrix.type }}
+          path: target/installer/*
+          if-no-files-found: error
+
+  release:
+    name: Publicar Release
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: TunAI ${{ github.ref_name }}
+          files: installers/*
+          generate_release_notes: true
+          body: |
+            ## Descargas
+            - **Windows:** `TunAI-*.exe`
+            - **macOS (Apple Silicon):** `TunAI-*.dmg`. No está firmado: la primera vez ábrelo con clic derecho → Abrir.
+            - **Linux (Debian/Ubuntu):** `tunai_*.deb` → `sudo apt install ./tunai_*.deb`
+
+            Cada instalador incluye Java: no hace falta instalar nada más.

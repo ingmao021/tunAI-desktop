@@ -1,0 +1,845 @@
+/*
+ * TunAI "Showroom": sistema de diseño claro sobre AtlantaFX (Cupertino Light, ver App#start).
+ *
+ * 1. Tokens: redefinen las variables -color-* del tema. Así todos los controles de AtlantaFX
+ *    (botones, menús, diálogos, popups…) heredan la marca sin estilos sueltos.
+ * 2. Clases propias de TunAI, siempre a partir de los tokens.
+ *
+ * Identidad: showroom claro + grafito metálico (como el cromo del logo) + acento azul "Volt". Títulos en Rajdhani
+ * (Resources#loadFonts); el texto corrido sigue en la fuente del sistema, que lee mejor.
+ */
+
+/* ===================================================================== Tokens */
+.root {
+    /* Escala neutra con tinte frío (gris acero); el tema la usa en hovers y bordes */
+    -color-base-0: #ffffff;
+    -color-base-1: #f6f8fb;
+    -color-base-2: #eef1f5;
+    -color-base-3: #e3e7ed;
+    -color-base-4: #cbd2db;
+    -color-base-5: #9aa3b2;
+    -color-base-6: #6b7486;
+    -color-base-7: #475163;
+    -color-base-8: #2a3242;
+    -color-base-9: #121826;
+
+    /* Superficies: tarjetas blancas sobre un fondo gris perla */
+    -color-bg-inset: #e9edf2;
+    -color-bg-default: #ffffff;
+    -color-bg-subtle: #f4f6f9;
+    -color-bg-overlay: #ffffff;
+    -color-border-default: #dde2e9;
+    -color-border-muted: #e8ecf1;
+    -color-border-subtle: #eef1f5;
+    -color-shadow-default: rgba(15, 23, 42, 0.12);
+
+    -color-fg-default: #111827;
+    -color-fg-muted: #5b6474;
+    -color-fg-subtle: #8a93a3;
+    -color-fg-emphasis: #ffffff;
+
+    -color-neutral-emphasis-plus: #475163;
+    -color-neutral-emphasis: #6b7486;
+    -color-neutral-muted: rgba(107, 116, 134, 0.22);
+    -color-neutral-subtle: rgba(107, 116, 134, 0.08);
+
+    /* Acento azul "Volt" (escala 0 = claro … 9 = oscuro) */
+    -color-accent-0: #e0f2fe;
+    -color-accent-1: #bae6fd;
+    -color-accent-2: #7dd3fc;
+    -color-accent-3: #38bdf8;
+    -color-accent-4: #0ea5e9;
+    -color-accent-5: #0284c7;
+    -color-accent-6: #0369a1;
+    -color-accent-7: #075985;
+    -color-accent-8: #0c4a6e;
+    -color-accent-9: #082f49;
+    /* Texto y enlaces sobre blanco: contraste AA */
+    -color-accent-fg: #0369a1;
+    /* Fondo que lleva texto blanco (menús, checks, toggles) */
+    -color-accent-emphasis: #0284c7;
+    -color-accent-muted: rgba(2, 132, 199, 0.35);
+    -color-accent-subtle: rgba(2, 132, 199, 0.08);
+
+    -color-success-fg: #047857;
+    -color-success-emphasis: #059669;
+    -color-success-muted: rgba(5, 150, 105, 0.35);
+    -color-success-subtle: rgba(5, 150, 105, 0.08);
+    -color-warning-fg: #b45309;
+    -color-warning-emphasis: #d97706;
+    -color-warning-muted: rgba(217, 119, 6, 0.35);
+    -color-warning-subtle: rgba(217, 119, 6, 0.1);
+    -color-danger-fg: #b91c1c;
+    -color-danger-emphasis: #dc2626;
+    -color-danger-muted: rgba(220, 38, 38, 0.35);
+    -color-danger-subtle: rgba(220, 38, 38, 0.08);
+
+    /* Marca */
+    -tunai-cta: linear-gradient(to right, #0284c7, #2563eb);
+    -tunai-cta-hover: linear-gradient(to right, #0ea5e9, #3b82f6);
+    -tunai-cta-fg: #ffffff;
+    /* Grafito metálico para títulos, a juego con el cromo del logo */
+    -tunai-chrome: linear-gradient(to bottom, #0f172a 0%, #334155 60%, #64748b 100%);
+    -tunai-glow: rgba(37, 99, 235, 0.28);
+    -tunai-stage: radial-gradient(center 50% 40%, radius 80%, #ffffff 0%, #eef1f5 55%, #d5dbe3 100%);
+
+    /* Alias usados por las vistas */
+    -tunai-primary: -color-accent-fg;
+    -tunai-bg: #f3f5f8;
+    -tunai-surface: -color-bg-default;
+    -tunai-border: -color-border-default;
+    -tunai-text: -color-fg-default;
+    -tunai-muted: -color-fg-muted;
+    -tunai-ok: -color-success-fg;
+    -tunai-error: -color-danger-fg;
+    -tunai-warn: -color-warning-fg;
+    -tunai-highlight: -color-accent-subtle;
+    -tunai-highlight-border: -color-accent-muted;
+
+    -fx-background-color: radial-gradient(center 50% -10%, radius 85%, #ffffff 0%, #f3f5f8 60%, #eceff4 100%);
+}
+
+.root.popup {
+    -fx-background-color: transparent;
+}
+
+/* ================================================================ Tipografía */
+.title,
+.title-1,
+.title-2,
+.title-3,
+.subtitle,
+.app-name,
+.section-title,
+.display {
+    -fx-font-family: "Rajdhani";
+    -fx-font-weight: bold;
+}
+
+.title,
+.title-1 {
+    -fx-font-size: 34px;
+    -fx-text-fill: -tunai-chrome;
+}
+
+.title-3 {
+    -fx-font-size: 22px;
+}
+
+.subtitle {
+    -fx-font-size: 22px;
+    -fx-text-fill: -color-fg-default;
+}
+
+.section-title {
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.app-name {
+    -fx-font-size: 40px;
+    -fx-text-fill: -tunai-chrome;
+}
+
+.muted {
+    -fx-text-fill: -tunai-muted;
+}
+
+.small {
+    -fx-font-size: 12px;
+}
+
+.ok-text {
+    -fx-text-fill: -tunai-ok;
+}
+
+.error-text {
+    -fx-text-fill: -tunai-error;
+}
+
+.warn-text {
+    -fx-text-fill: -tunai-warn;
+}
+
+.ok-text > .ikonli-font-icon {
+    -fx-icon-color: -tunai-ok;
+}
+
+.error-text > .ikonli-font-icon {
+    -fx-icon-color: -tunai-error;
+}
+
+/* =================================================================== Botones */
+.button,
+.toggle-button,
+.menu-button {
+    -fx-cursor: hand;
+}
+
+/* CTA: degradado Volt con texto oscuro. También los botones por defecto de los diálogos. */
+.button.primary,
+.button.accent,
+.button:default {
+    -color-button-bg: -tunai-cta;
+    -color-button-border: transparent;
+    -color-button-fg: -tunai-cta-fg;
+    -color-button-bg-hover: -tunai-cta-hover;
+    -color-button-border-hover: transparent;
+    -color-button-fg-hover: -tunai-cta-fg;
+    -color-button-bg-focused: -tunai-cta;
+    -color-button-border-focused: -color-accent-3;
+    -color-button-fg-focused: -tunai-cta-fg;
+    -color-button-bg-pressed: -color-accent-6;
+    -color-button-border-pressed: transparent;
+    -color-button-fg-pressed: -tunai-cta-fg;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 16, 0.1, 0, 3);
+}
+
+.button.primary > .ikonli-font-icon,
+.button.accent > .ikonli-font-icon,
+.button:default > .ikonli-font-icon {
+    -fx-icon-color: -tunai-cta-fg;
+}
+
+.button.primary:disabled,
+.button.accent:disabled {
+    -fx-effect: none;
+}
+
+.button.large {
+    -fx-padding: 10 22 10 18;
+    -fx-font-size: 15px;
+}
+
+/* El tema pinta el borde del toggle seleccionado con un azul fijo: se alinea con el acento */
+.toggle-button:selected {
+    -fx-background-color: -color-accent-4, -color-accent-emphasis;
+}
+
+/* Botón fantasma para "volver" y acciones secundarias en barras */
+.button.ghost,
+.toggle-button.ghost {
+    -color-button-bg: transparent;
+    -color-button-border: transparent;
+    /* El borde del tema es una capa de fondo completa: con fondo transparente lo rellenaría todo */
+    -color-button-bg-hover: -color-bg-subtle;
+    -color-button-border-hover: -color-border-default;
+    -color-button-bg-focused: -color-bg-default;
+    -color-button-border-focused: -color-accent-muted;
+    -color-button-fg-focused: -color-fg-default;
+    -color-button-bg-pressed: -color-bg-inset;
+    -fx-effect: none;
+}
+
+.button.link {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-effect: none;
+    -fx-text-fill: -tunai-primary;
+    -fx-padding: 0;
+    -fx-underline: true;
+}
+
+/* ============================================================ Estructura */
+.surface {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 18;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 40, 0.1, 0, 14);
+}
+
+.top-bar {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-border-color: transparent transparent
+        linear-gradient(to right, -color-border-default, rgba(2, 132, 199, 0.55) 50%, -color-border-default) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 10 24 10 24;
+    -fx-min-height: 64;
+}
+
+.top-bar .subtitle {
+    -fx-font-size: 22px;
+}
+
+.top-bar-divider {
+    -fx-min-width: 1;
+    -fx-max-width: 1;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+    -fx-background-color: -color-border-default;
+}
+
+.header-pill {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 999;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 999;
+    -fx-padding: 6 16 6 14;
+}
+
+/* Píldora de estado flotante (garaje): sin borde, con sombra suave */
+.floating-pill {
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: transparent;
+    -fx-padding: 10 16 10 18;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 18, 0.1, 0, 4);
+}
+
+.page-title {
+    -fx-font-size: 28px;
+}
+
+.status-dot {
+    -fx-font-size: 13px;
+    -fx-graphic-text-gap: 8;
+}
+
+.status-connecting {
+    -fx-text-fill: -tunai-warn;
+}
+
+.status-ok {
+    -fx-text-fill: #10b981;
+    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.55), 6, 0.3, 0, 0);
+}
+
+.status-error {
+    -fx-text-fill: -tunai-error;
+}
+
+.notice {
+    -fx-background-color: -tunai-highlight;
+    -fx-background-radius: 12;
+    -fx-border-color: -tunai-highlight-border;
+    -fx-border-radius: 12;
+    -fx-padding: 14 16 14 16;
+}
+
+/* Pasos del flujo de creación: Foto → Generar → Personalizar */
+.flow-steps {
+    -fx-spacing: 10;
+    -fx-alignment: center;
+}
+
+.flow-step {
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-fg-subtle;
+    -fx-graphic-text-gap: 8;
+}
+
+.flow-step > .step-num {
+    -fx-font-family: "Rajdhani";
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-max-width: 24;
+    -fx-max-height: 24;
+    -fx-alignment: center;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: -color-border-default;
+    -fx-text-fill: -color-fg-subtle;
+}
+
+.flow-step.active {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-weight: bold;
+}
+
+.flow-step.active > .step-num {
+    -fx-background-color: -tunai-cta;
+    -fx-border-color: transparent;
+    -fx-text-fill: -tunai-cta-fg;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 10, 0.2, 0, 0);
+}
+
+.flow-step.done {
+    -fx-text-fill: -color-fg-muted;
+}
+
+.flow-step.done > .step-num {
+    -fx-border-color: -color-accent-muted;
+    -fx-text-fill: -color-accent-fg;
+}
+
+.flow-sep {
+    -fx-min-width: 28;
+    -fx-max-width: 28;
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
+    -fx-background-color: -color-border-default;
+}
+
+/* Icono dentro de un círculo con brillo, para estados vacíos y cabeceras */
+.icon-badge {
+    -fx-min-width: 72;
+    -fx-min-height: 72;
+    -fx-max-width: 72;
+    -fx-max-height: 72;
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #ffffff, #e0f2fe);
+    -fx-background-radius: 36;
+    -fx-border-color: -color-accent-muted;
+    -fx-border-radius: 36;
+}
+
+.icon-badge > .ikonli-font-icon {
+    -fx-icon-color: -color-accent-fg;
+    -fx-icon-size: 34px;
+}
+
+.icon-badge.small {
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+}
+
+.icon-badge.small > .ikonli-font-icon {
+    -fx-icon-size: 20px;
+}
+
+/* ============================================================== Consentimiento */
+.hero-tagline {
+    -fx-font-size: 16px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.how-step {
+    -fx-spacing: 14;
+    -fx-alignment: center-left;
+}
+
+.how-step-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+/* ===================================================================== Garaje */
+.garage-scroll,
+.garage-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.vehicle-card {
+    -fx-cursor: hand;
+}
+
+.vehicle-card > .container {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 16;
+    -fx-border-color: -color-border-muted;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.08), 18, 0.1, 0, 6);
+}
+
+.vehicle-card:hover {
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.vehicle-card:hover > .container {
+    -fx-border-color: -color-accent-muted;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 24, 0.12, 0, 6);
+}
+
+/* El Tile de AtlantaFX usa la clase .title para el nombre: aquí va a tamaño de tarjeta */
+.vehicle-card .title {
+    -fx-font-family: "Rajdhani";
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-text-fill: -color-fg-default;
+}
+
+.thumb-box {
+    -fx-background-color: -tunai-stage;
+    -fx-background-radius: 12;
+}
+
+.card-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 999;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 999;
+    -fx-padding: 2 10 2 8;
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-fg-muted;
+    -fx-graphic-text-gap: 5;
+}
+
+.empty-state {
+    -fx-background-color: rgba(255, 255, 255, 0.75);
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-default;
+    -fx-border-style: segments(10, 8);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 20;
+    -fx-padding: 44;
+}
+
+.empty-state > .label {
+    -fx-text-alignment: center;
+}
+
+/* ============================================================ Nuevo vehículo */
+.drop-zone {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-border-color: -color-border-default;
+    -fx-border-style: segments(10, 8);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 18;
+    -fx-background-radius: 18;
+}
+
+.drop-zone:hover {
+    -fx-border-color: -color-accent-muted;
+}
+
+.drop-zone.drag-over {
+    -fx-border-color: -tunai-primary;
+    -fx-border-style: solid;
+    -fx-background-color: -tunai-highlight;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 28, 0.15, 0, 0);
+}
+
+.drop-title {
+    -fx-font-family: "Rajdhani";
+    -fx-font-weight: bold;
+    -fx-font-size: 22px;
+    -fx-text-fill: -color-fg-default;
+}
+
+.tips-panel {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 16;
+    -fx-border-color: -color-border-muted;
+    -fx-border-radius: 16;
+    -fx-padding: 18 20 18 20;
+}
+
+.tip {
+    -fx-spacing: 2;
+}
+
+.tip > .label:first-child {
+    -fx-font-weight: bold;
+    -fx-graphic-text-gap: 8;
+}
+
+.tip-detail {
+    -fx-padding: 0 0 0 26;
+}
+
+.form-row {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-muted;
+    -fx-border-radius: 14;
+    -fx-padding: 12 16 12 16;
+}
+
+/* ================================================================== Generando */
+.photo-frame {
+    -fx-background-color: -tunai-stage;
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 14;
+    -fx-padding: 10;
+}
+
+.step {
+    -fx-font-size: 15px;
+    -fx-graphic-text-gap: 12;
+}
+
+.step-pending {
+    -fx-text-fill: -color-fg-subtle;
+}
+
+.step-pending > .ikonli-font-icon {
+    -fx-icon-color: -color-fg-subtle;
+}
+
+.step-active {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-weight: bold;
+}
+
+.step-active > .ikonli-font-icon {
+    -fx-icon-color: -color-accent-fg;
+}
+
+.step-done {
+    -fx-text-fill: -tunai-ok;
+}
+
+.step-done > .ikonli-font-icon {
+    -fx-icon-color: -tunai-ok;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: -tunai-cta;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 8, 0.2, 0, 0);
+}
+
+.elapsed {
+    -fx-font-family: "Rajdhani";
+    -fx-font-weight: bold;
+    -fx-font-size: 20px;
+    -fx-text-fill: -color-fg-default;
+}
+
+/* ====================================================================== Visor */
+.viewer-stage {
+    -fx-background-color: -tunai-stage;
+}
+
+.side-panel {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: transparent transparent transparent -color-border-muted;
+    -fx-padding: 20 18 20 18;
+}
+
+.panel-section {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-muted;
+    -fx-border-radius: 14;
+    -fx-padding: 14;
+    -fx-spacing: 10;
+}
+
+.swatch {
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+    -fx-max-width: 30;
+    -fx-max-height: 30;
+    -fx-background-radius: 15;
+    -fx-background-insets: 3;
+    -fx-border-radius: 15;
+    -fx-border-color: -color-border-default;
+    -fx-border-width: 2;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-effect: none;
+}
+
+.swatch:hover {
+    -fx-border-color: -color-fg-muted;
+}
+
+.swatch:selected {
+    -fx-border-color: -color-accent-fg;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 10, 0.3, 0, 0);
+}
+
+.color-picker.swatch-only > .color-picker-label {
+    -fx-content-display: graphic-only;
+}
+
+.viewer-toolbar {
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-padding: 6 8 6 18;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.14), 24, 0.1, 0, 8);
+}
+
+.viewer-toolbar .hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-muted;
+    -fx-graphic-text-gap: 6;
+}
+
+.viewer-toolbar .hint > .ikonli-font-icon {
+    -fx-icon-color: -color-fg-subtle;
+    -fx-icon-size: 15px;
+}
+
+.viewer-toolbar .toggle-button,
+.viewer-toolbar .button {
+    -color-button-bg: transparent;
+    -color-button-border: transparent;
+    -color-button-bg-hover: -color-bg-subtle;
+    -color-button-bg-focused: -color-bg-default;
+    -color-button-border-focused: -color-accent-muted;
+    -color-button-fg-focused: -color-fg-default;
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
+}
+
+.viewer-toolbar .toggle-button:selected {
+    -fx-background-color: -color-accent-muted, #e0f2fe;
+    -fx-text-fill: -color-accent-fg;
+}
+
+.viewer-toolbar .toggle-button:selected > .ikonli-font-icon {
+    -fx-icon-color: -color-accent-fg;
+}
+
+.unsaved-chip {
+    -fx-background-color: -color-warning-subtle;
+    -fx-background-radius: 999;
+    -fx-padding: 2 10 2 10;
+    -fx-text-fill: -tunai-warn;
+    -fx-font-size: 12px;
+}
+
+/* ============================================== Créditos (moneda) y precios */
+.credit-coin {
+    -fx-fill: linear-gradient(to bottom, #ffe082, #f9a825);
+    -fx-stroke: #c17900;
+    -fx-stroke-width: 1;
+}
+
+.credit-coin-mark {
+    -fx-font-weight: bold;
+    -fx-text-fill: #7a4f00;
+    -fx-padding: 0;
+}
+
+.plan-card {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 16;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 16;
+    -fx-padding: 18;
+}
+
+.plan-featured {
+    -fx-border-color: -color-accent-emphasis;
+    -fx-border-width: 1.5;
+    -fx-effect: dropshadow(gaussian, -tunai-glow, 22, 0.1, 0, 4);
+}
+
+.plan-badge {
+    -fx-background-color: -tunai-cta;
+    -fx-background-radius: 999;
+    -fx-text-fill: -tunai-cta-fg;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 10 2 10;
+}
+
+.plan-name {
+    -fx-font-family: "Rajdhani";
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.plan-credits {
+    -fx-font-size: 15px;
+    -fx-graphic-text-gap: 6;
+}
+
+.plan-price {
+    -fx-font-family: "Rajdhani";
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tunai-chrome;
+}
+
+/* ================================================================== Diálogos */
+.dialog-pane {
+    -fx-background-color: -color-bg-overlay;
+}
+
+.dialog-pane > .button-bar > .container {
+    -fx-background-color: transparent;
+}
+
+/* ===================================================== Iconos con color semántico */
+.ikonli-font-icon.icon-accent {
+    -fx-icon-color: -color-accent-fg;
+}
+
+.ikonli-font-icon.icon-warn {
+    -fx-icon-color: -color-warning-emphasis;
+}
+
+/* ================================================================== Acerca de */
+.about-hero {
+    -fx-background-color: linear-gradient(to right, #f0f9ff, #ffffff);
+    -fx-background-radius: 16;
+    -fx-padding: 16 20 16 16;
+}
+
+.about-name {
+    -fx-font-family: "Rajdhani";
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tunai-chrome;
+}
+
+.about-version {
+    -fx-background-color: -color-accent-subtle;
+    -fx-background-radius: 999;
+    -fx-border-color: -color-accent-muted;
+    -fx-border-radius: 999;
+    -fx-padding: 1 9 1 9;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-accent-fg;
+}
+
+.about-section-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+    -fx-graphic-text-gap: 8;
+}
+
+.about-card {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 12;
+    -fx-padding: 14 16 14 16;
+}
+
+.about-count {
+    -fx-background-color: -color-neutral-subtle;
+    -fx-background-radius: 999;
+    -fx-padding: 0 8 0 8;
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.license-scroll {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 12;
+    -fx-padding: 1;
+}
+
+.license-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.license-row {
+    -fx-padding: 9 10 9 14;
+    -fx-border-color: transparent transparent -color-border-subtle transparent;
+}
+
+.license-row:hover {
+    -fx-background-color: -color-bg-subtle;
+}
+
+.about-id-field {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 10;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 10;
+    -fx-padding: 6 6 6 12;
+}
+
+.about-id {
+    -fx-font-family: "Consolas", "monospace";
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-default;
+}

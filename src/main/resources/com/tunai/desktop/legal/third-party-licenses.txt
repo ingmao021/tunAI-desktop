@@ -1,0 +1,8 @@
+OpenJFX 21 — GPL v2 con Classpath Exception — https://openjdk.org/projects/openjfx/
+AtlantaFX — MIT License — https://github.com/mkpaz/atlantafx
+JglTF (de.javagl) — MIT License — https://github.com/javagl/JglTF
+Jackson — Apache License 2.0 — https://github.com/FasterXML/jackson
+ONNX Runtime (Microsoft) — MIT License — https://github.com/microsoft/onnxruntime
+MobileNetV2 (mobilenetv2-12.onnx, ONNX Model Zoo) — Apache License 2.0 según el Model Zoo; PENDIENTE DE VALIDAR — https://github.com/onnx/models
+Ikonli (Material Design Icons) — Apache License 2.0 — https://github.com/kordamp/ikonli
+Rajdhani (Indian Type Foundry) — SIL Open Font License 1.1 — https://fonts.google.com/specimen/Rajdhani

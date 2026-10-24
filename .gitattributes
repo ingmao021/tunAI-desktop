@@ -1,0 +1,8 @@
+* text=auto
+mvnw text eol=lf
+*.cmd text eol=crlf
+*.onnx binary
+*.glb binary
+*.png binary
+*.jpg binary
+*.ico binary

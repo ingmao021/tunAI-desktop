@@ -41,3 +41,4 @@ build/
 .idea/
 .mcp.json
 *.log
+.claude/worktrees/

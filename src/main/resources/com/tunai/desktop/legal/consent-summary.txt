@@ -1,0 +1,1 @@
+Tu foto se envía a Tripo AI, un proveedor de IA fuera de Colombia, solo para generar el modelo. TunAI no la guarda.

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tunai.desktop.ui.ConsentController">
+    <VBox styleClass="surface" maxWidth="640" maxHeight="-Infinity" spacing="16" alignment="TOP_CENTER">
+        <padding>
+            <Insets top="22" right="48" bottom="28" left="48"/>
+        </padding>
+        <VBox alignment="CENTER" spacing="2">
+            <ImageView fitWidth="130" fitHeight="130" preserveRatio="true" smooth="true">
+                <Image url="@../icons/icon-256.png"/>
+            </ImageView>
+            <Label text="Mira tu carro en 3D y pruébale colores nuevos." styleClass="hero-tagline"/>
+        </VBox>
+
+        <VBox spacing="10" maxWidth="Infinity">
+            <Label text="CÓMO FUNCIONA" styleClass="section-title"/>
+            <HBox styleClass="how-step">
+                <StackPane styleClass="icon-badge, small">
+                    <FontIcon iconLiteral="mdal-add_a_photo"/>
+                </StackPane>
+                <VBox>
+                    <Label text="Sube una foto de tu carro" styleClass="how-step-title"/>
+                    <Label text="Una foto en diagonal, con el vehículo completo." styleClass="muted, small"/>
+                </VBox>
+            </HBox>
+            <HBox styleClass="how-step">
+                <StackPane styleClass="icon-badge, small">
+                    <FontIcon iconLiteral="mdmz-memory"/>
+                </StackPane>
+                <VBox>
+                    <Label text="La IA crea un modelo 3D" styleClass="how-step-title"/>
+                    <Label text="Tarda alrededor de 1 minuto." styleClass="muted, small"/>
+                </VBox>
+            </HBox>
+            <HBox styleClass="how-step">
+                <StackPane styleClass="icon-badge, small">
+                    <FontIcon iconLiteral="mdmz-palette"/>
+                </StackPane>
+                <VBox>
+                    <Label text="Cámbiale el color y guárdalo" styleClass="how-step-title"/>
+                    <Label text="Tu garaje queda en este equipo, incluso sin conexión." styleClass="muted, small"/>
+                </VBox>
+            </HBox>
+        </VBox>
+
+        <HBox styleClass="notice" spacing="12" maxWidth="Infinity">
+            <FontIcon iconLiteral="mdmz-privacy_tip" iconSize="20" styleClass="icon-accent"/>
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label fx:id="summaryLabel" wrapText="true"/>
+                <Button text="Ver detalles" styleClass="link" onAction="#onShowDetails"/>
+            </VBox>
+        </HBox>
+
+        <CheckBox fx:id="acceptCheck" text="Acepto el envío de mis fotos para generar modelos" maxWidth="Infinity"/>
+
+        <Button fx:id="startButton" text="Empezar" styleClass="primary, large" defaultButton="true"
+                onAction="#onStart" prefWidth="220" contentDisplay="RIGHT">
+            <graphic>
+                <FontIcon iconLiteral="mdal-arrow_forward"/>
+            </graphic>
+        </Button>
+    </VBox>
+</StackPane>
