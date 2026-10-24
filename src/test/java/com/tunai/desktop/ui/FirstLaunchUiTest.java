@@ -5,7 +5,6 @@ import javafx.application.Application;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.stage.Stage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,18 +39,17 @@ class FirstLaunchUiTest extends FxRobot {
         // Servidor inexistente: el garaje debe funcionar igual.
         System.setProperty("tunai.api.url", "http://127.0.0.1:9");
 
-        Stage stage = FxToolkit.registerPrimaryStage();
+        FxToolkit.registerPrimaryStage();
         app = FxToolkit.setupApplication(App.class);
-        // Con otra ventana en primer plano (p. ej. al correr toda la suite), Windows descarta el primer clic.
-        interact(stage::toFront);
         Button start = lookup("Empezar").queryButton();
         assertTrue(start.isDisabled());
-        // Primera ventana del proceso: Windows a veces ignora un clic inmediato al mostrarla.
-        // Se entra primero con el mouse y se espera a que JavaFX procese el movimiento.
+        // Primera ventana del proceso: si otra (la terminal) tiene el foco, Windows puede gastar uno o más clics en
+        // activarla; depende del escritorio, no de la app. Se repite el clic hasta 3 veces y se exige el resultado.
         CheckBox accept = lookup("#acceptCheck").queryAs(CheckBox.class);
-        moveTo(accept);
-        WaitForAsyncUtils.waitForFxEvents();
-        clickOn(accept);
+        for (int attempt = 0; attempt < 3 && !accept.isSelected(); attempt++) {
+            clickOn(accept);
+            WaitForAsyncUtils.waitForFxEvents();
+        }
         assertTrue(accept.isSelected());
         assertFalse(start.isDisabled());
         clickOn(start);
