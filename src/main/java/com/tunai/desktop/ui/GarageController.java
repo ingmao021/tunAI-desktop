@@ -6,6 +6,8 @@ import atlantafx.base.theme.Styles;
 import com.tunai.desktop.AppContext;
 import com.tunai.desktop.api.Quota;
 import com.tunai.desktop.garage.GarageVehicle;
+import com.tunai.desktop.viewer.UnsupportedModelException;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
@@ -34,6 +36,7 @@ import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -64,6 +67,8 @@ public class GarageController implements NavigationAware {
     private StackPane newVehicleWrapper;
     @FXML
     private Button newVehicleButton;
+    @FXML
+    private Button openModelButton;
     @FXML
     private ScrollPane cardsScroll;
     @FXML
@@ -259,6 +264,41 @@ public class GarageController implements NavigationAware {
             Dialogs.info(context.stage(), "Eliminar vehículo", "No se pudo eliminar el vehículo.");
         }
         reloadVehicles();
+    }
+
+    /** Importa un GLB del disco (p. ej. uno exportado o el respaldo de un ensayo). Gratis y sin conexión. */
+    @FXML
+    private void onOpenModel() {
+        File file = VehicleImport.chooseSource(context);
+        if (file == null) {
+            return;
+        }
+        openModelButton.setDisable(true);
+        context.background().execute(() -> {
+            GarageVehicle vehicle = null;
+            String problem = null;
+            try {
+                vehicle = VehicleImport.importFile(context.garage(), file.toPath());
+            } catch (VehicleImport.ModelTooLargeException e) {
+                problem = VehicleImport.ERR_TOO_LARGE;
+            } catch (UnsupportedModelException e) {
+                LOG.warning("UNSUPPORTED_MODEL al importar " + file + ": " + e.getMessage());
+                problem = "Este archivo no es un modelo compatible con el visor de TunAI.";
+            } catch (IOException | RuntimeException e) {
+                LOG.log(Level.WARNING, "No se pudo importar " + file, e);
+                problem = "No se pudo abrir el archivo.";
+            }
+            GarageVehicle imported = vehicle;
+            String message = problem;
+            Platform.runLater(() -> {
+                openModelButton.setDisable(false);
+                if (imported != null) {
+                    openViewer(imported);
+                } else {
+                    Dialogs.info(context.stage(), "Abrir modelo", message);
+                }
+            });
+        });
     }
 
     @FXML

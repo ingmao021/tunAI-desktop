@@ -28,6 +28,13 @@
                 <Label fx:id="countLabel" styleClass="text-muted"/>
             </VBox>
             <Spacer/>
+            <!-- Importar un GLB del disco: no consume créditos ni necesita conexión -->
+            <Button fx:id="openModelButton" text="Abrir modelo" styleClass="large"
+                    onAction="#onOpenModel">
+                <graphic>
+                    <FontIcon iconLiteral="mdal-folder_open"/>
+                </graphic>
+            </Button>
             <!-- Contenedor para mostrar el tooltip aun con el botón deshabilitado -->
             <StackPane fx:id="newVehicleWrapper">
                 <Button fx:id="newVehicleButton" text="+ Nuevo vehículo" styleClass="accent, large"
