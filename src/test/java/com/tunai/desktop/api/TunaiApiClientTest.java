@@ -91,6 +91,58 @@ class TunaiApiClientTest {
     }
 
     @Test
+    void loginSendsCredentialsAsJsonAndParsesTheSession() throws Exception {
+        AtomicReference<String> sent = new AtomicReference<>();
+        handlers.put("/api/v1/auth/login", ex -> {
+            sent.set(new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            respond(ex, 200, "application/json",
+                    ("{\"username\":\"demo\",\"token\":\"abc.def.ghi\",\"expiresAt\":\"2026-12-11T05:00:00Z\"}")
+                            .getBytes());
+        });
+        AuthSession session = client.login("demo", "clave");
+        assertEquals(new AuthSession("demo", "abc.def.ghi", Instant.parse("2026-12-11T05:00:00Z")), session);
+        assertTrue(sent.get().contains("\"username\":\"demo\""));
+        assertTrue(sent.get().contains("\"password\":\"clave\""));
+    }
+
+    @Test
+    void wrongCredentialsMapToInvalidCredentials() {
+        handlers.put("/api/v1/auth/login", ex -> problem(ex, 401, "INVALID_CREDENTIALS"));
+        ApiException ex = assertThrows(ApiException.class, () -> client.login("demo", "mala"));
+        assertEquals(ErrorCode.INVALID_CREDENTIALS, ex.code());
+        assertEquals(ErrorCode.Action.STAY, ex.code().action());
+    }
+
+    @Test
+    void incompleteLoginResponseIsAnInternalError() {
+        handlers.put("/api/v1/auth/login", ex -> respond(ex, 200, "application/json", "{}".getBytes()));
+        assertEquals(ErrorCode.INTERNAL_ERROR, assertThrows(ApiException.class, () -> client.login("a", "b")).code());
+    }
+
+    @Test
+    void bearerTokenIsSentOnlyWhenThereIsASession() throws Exception {
+        AtomicReference<String> auth = new AtomicReference<>("sin-llamar");
+        handlers.put("/api/v1/quota", ex -> {
+            auth.set(ex.getRequestHeaders().getFirst("Authorization"));
+            respond(ex, 200, "application/json",
+                    "{\"limit\":3,\"remaining\":3,\"resetsAt\":\"2026-10-10T05:00:00Z\"}".getBytes());
+        });
+        client.quota();
+        assertEquals(null, auth.get());
+        client.useToken(() -> "mi-token");
+        client.quota();
+        assertEquals("Bearer mi-token", auth.get());
+    }
+
+    @Test
+    void expiredSessionMapsToSignOut() {
+        handlers.put("/api/v1/quota", ex -> problem(ex, 401, "UNAUTHORIZED"));
+        ApiException ex = assertThrows(ApiException.class, () -> client.quota());
+        assertEquals(ErrorCode.UNAUTHORIZED, ex.code());
+        assertEquals(ErrorCode.Action.SIGN_OUT, ex.code().action());
+    }
+
+    @Test
     void healthReflectsStatus() {
         handlers.put("/actuator/health", ex -> respond(ex, 200, "application/json", "{\"status\":\"UP\"}".getBytes()));
         assertTrue(client.health());

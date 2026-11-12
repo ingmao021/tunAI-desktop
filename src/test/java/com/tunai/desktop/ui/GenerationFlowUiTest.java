@@ -112,7 +112,7 @@ class GenerationFlowUiTest extends FxRobot {
         System.setProperty("tunai.home", home.toString());
         System.setProperty("tunai.api.url", "http://127.0.0.1:" + server.getAddress().getPort());
         Files.writeString(home.resolve("settings.json"),
-                "{\"consentAcceptedAt\":\"2026-10-09T12:00:00Z\",\"classifier\":{\"enabled\":false}}");
+                "{\"consentAcceptedAt\":\"2026-10-09T12:00:00Z\",\"account\":\"demo\",\"session\":{\"username\":\"demo\",\"token\":\"token-de-prueba\",\"expiresAt\":\"2099-01-01T00:00:00Z\"},\"classifier\":{\"enabled\":false}}");
         FxToolkit.registerPrimaryStage();
         FxToolkit.setupStage(s -> s.setMaximized(false));
         launch();

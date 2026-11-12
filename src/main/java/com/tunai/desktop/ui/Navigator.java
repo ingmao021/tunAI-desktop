@@ -16,17 +16,24 @@ import java.util.function.Consumer;
 public class Navigator {
 
     public enum Screen {
+        LOGIN("LoginView.fxml"),
         CONSENT("ConsentView.fxml"),
         GARAGE("GarageView.fxml"),
         NEW_VEHICLE("NewVehicleView.fxml"),
         GENERATING("GeneratingView.fxml"),
-        VIEWER("ViewerView.fxml");
+        VIEWER("ViewerView.fxml"),
+        SETTINGS("SettingsView.fxml");
 
         private final String fxml;
 
         Screen(String fxml) {
             this.fxml = fxml;
         }
+    }
+
+    /** Primera pantalla con sesión válida: el consentimiento si aún no lo aceptó, si no el garaje. */
+    public static Screen afterLogin(com.tunai.desktop.config.Settings settings) {
+        return settings.hasConsent() ? Screen.GARAGE : Screen.CONSENT;
     }
 
     private static final Duration FADE_IN = Duration.millis(220);
@@ -67,7 +74,8 @@ public class Navigator {
         C controller = loader.getController();
         init.accept(controller);
         currentController = controller;
-        scene.setRoot(root);
+        Parent shown = SidebarShell.wraps(screen) ? new SidebarShell(root, screen, context) : root;
+        scene.setRoot(shown);
         FadeTransition fade = new FadeTransition(FADE_IN, root);
         fade.setFromValue(0);
         fade.setToValue(1);

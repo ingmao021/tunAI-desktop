@@ -44,6 +44,9 @@ public class ModelViewer extends Pane {
     static final double MIN_DISTANCE = GlbModel.TARGET_SIZE * 0.95;
     static final double MAX_DISTANCE = 1400;
     static final double AUTO_ROTATE_DEG_PER_SEC = 18;
+    static final double FIELD_OF_VIEW = 35;
+    /** Holgura vertical al encuadrar (la barra de herramientas tapa la parte baja). */
+    static final double FIT_MARGIN = 1.55;
     /** Fondo de estudio claro: foco blanco tras el vehículo que se vuelve gris perla hacia los bordes. */
     private static final Paint BACKGROUND = new RadialGradient(0, 0, 0.5, 0.4, 0.8, true, CycleMethod.NO_CYCLE,
             new Stop(0, Color.web("#ffffff")), new Stop(0.55, Color.web("#eef1f5")), new Stop(1, Color.web("#d5dbe3")));
@@ -59,6 +62,8 @@ public class ModelViewer extends Pane {
     private final BooleanProperty autoRotate = new SimpleBooleanProperty(false);
     private final AnimationTimer autoRotateTimer;
 
+    private double initialDistance = INITIAL_DISTANCE;
+
     private double dragX;
     private double dragY;
 
@@ -67,7 +72,7 @@ public class ModelViewer extends Pane {
         material.setSpecularPower(24);
 
         camera.setNearClip(1);
-        camera.setFieldOfView(35);
+        camera.setFieldOfView(FIELD_OF_VIEW);
         camera.setFarClip(10_000);
         // La luz puntual viaja con la cámara: el lado visible siempre está iluminado.
         PointLight key = new PointLight(Color.gray(0.55));
@@ -79,7 +84,12 @@ public class ModelViewer extends Pane {
         Group root = new Group(modelGroup, ambient, cameraRig);
 
         subScene = new SubScene(root, 100, 100, true, SceneAntialiasing.BALANCED);
-        subScene.setFill(BACKGROUND);
+        // El degradado va en el fondo del Pane (dibujado en 2D): como relleno del SubScene el renderizador lo pintaba
+        // con un polígono gris en diagonal. El SubScene queda transparente sobre él.
+        setBackground(new javafx.scene.layout.Background(
+                new javafx.scene.layout.BackgroundFill(BACKGROUND, javafx.scene.layout.CornerRadii.EMPTY,
+                        javafx.geometry.Insets.EMPTY)));
+        subScene.setFill(Color.TRANSPARENT);
         subScene.setCamera(camera);
         subScene.widthProperty().bind(widthProperty());
         subScene.heightProperty().bind(heightProperty());
@@ -138,7 +148,27 @@ public class ModelViewer extends Pane {
         view.setDrawMode(DrawMode.FILL);
         modelGroup.getChildren().setAll(view);
         setTexture(texture);
+        initialDistance = fitDistance(model.points());
         resetView();
+    }
+
+    /**
+     * Distancia de cámara que deja entero el modelo en vertical. Los vehículos (bajos y anchos) usan
+     * {@link #INITIAL_DISTANCE}; un modelo alto, como un personaje, necesita alejarse para no quedar cortado.
+     */
+    static double fitDistance(float[] points) {
+        float minY = Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+        for (int i = 1; i < points.length; i += 3) {
+            minY = Math.min(minY, points[i]);
+            maxY = Math.max(maxY, points[i]);
+        }
+        if (maxY < minY) {
+            return INITIAL_DISTANCE;
+        }
+        double halfHeight = (maxY - minY) / 2.0;
+        double needed = halfHeight * FIT_MARGIN / Math.tan(Math.toRadians(FIELD_OF_VIEW / 2));
+        return clamp(Math.max(INITIAL_DISTANCE, needed), INITIAL_DISTANCE, MAX_DISTANCE);
     }
 
     public void setTexture(Image texture) {
@@ -148,7 +178,7 @@ public class ModelViewer extends Pane {
     public void resetView() {
         yaw.setAngle(INITIAL_YAW);
         pitch.setAngle(INITIAL_PITCH);
-        dolly.setZ(-INITIAL_DISTANCE);
+        dolly.setZ(-initialDistance);
         pan.setX(0);
         pan.setY(0);
         pan.setZ(0);
@@ -167,8 +197,9 @@ public class ModelViewer extends Pane {
     /** Captura del visor (§5.5, exportar PNG y miniatura del garaje). */
     public WritableImage snapshot() {
         SnapshotParameters params = new SnapshotParameters();
-        params.setFill(BACKGROUND);
-        return subScene.snapshot(params, null);
+        // Se captura el Pane entero: así sale el degradado de fondo (el SubScene es transparente).
+        params.setFill(Color.WHITE);
+        return snapshot(params, null);
     }
 
     double distance() {

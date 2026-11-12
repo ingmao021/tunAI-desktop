@@ -1,6 +1,7 @@
 package com.tunai.desktop.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.tunai.desktop.config.Json;
 
 import java.io.ByteArrayOutputStream;
@@ -38,12 +39,14 @@ public class TunaiApiClient {
     /** El backend en Render tarda ~1 minuto en despertar (medido: hasta 86 s). */
     public static final Duration HEALTH_TIMEOUT = Duration.ofSeconds(120);
     public static final Duration QUOTA_TIMEOUT = Duration.ofSeconds(30);
+    public static final Duration LOGIN_TIMEOUT = Duration.ofSeconds(120);
 
     private final HttpClient http;
     private final URI baseUrl;
     private final Supplier<UUID> installationId;
     private final String clientVersion;
     private final Duration generationTimeout;
+    private volatile Supplier<String> token = () -> null;
 
     public TunaiApiClient(URI baseUrl, Supplier<UUID> installationId, String clientVersion) {
         this(baseUrl, installationId, clientVersion, GENERATION_TIMEOUT);
@@ -125,11 +128,57 @@ public class TunaiApiClient {
         return new GenerationResult(response.body(), quotaFromHeaders(response).orElse(null));
     }
 
+    /** Token de la sesión iniciada; se envía como {@code Authorization: Bearer} en cuota y generaciones. */
+    public void useToken(Supplier<String> token) {
+        this.token = token;
+    }
+
+    /**
+     * {@code POST /api/v1/auth/login}. El servidor puede estar despertando (hasta ~90 s), por eso el plazo largo.
+     *
+     * @throws ApiException {@code INVALID_CREDENTIALS} si usuario o contraseña no coinciden
+     */
+    public AuthSession login(String username, String password) throws ApiException {
+        byte[] body;
+        try {
+            body = Json.MAPPER.writer().without(SerializationFeature.INDENT_OUTPUT)
+                    .writeValueAsBytes(java.util.Map.of("username", username, "password", password));
+        } catch (IOException e) {
+            throw ApiException.client(ErrorCode.INTERNAL_ERROR, "No se pudo armar la petición", e);
+        }
+        HttpRequest request = HttpRequest.newBuilder(baseUrl.resolve("/api/v1/auth/login"))
+                .timeout(LOGIN_TIMEOUT)
+                .header("X-Client-Version", clientVersion)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                .build();
+        HttpResponse<byte[]> response = send(request, LOGIN_TIMEOUT, null);
+        if (response.statusCode() != 200) {
+            throw toApiException(response);
+        }
+        try {
+            JsonNode json = Json.MAPPER.readTree(response.body());
+            String sessionToken = json.path("token").asText(null);
+            Instant expiresAt = parseInstant(json.path("expiresAt").asText(null));
+            if (sessionToken == null || sessionToken.isBlank() || expiresAt == null) {
+                throw ApiException.client(ErrorCode.INTERNAL_ERROR, "Respuesta de inicio de sesión incompleta", null);
+            }
+            return new AuthSession(json.path("username").asText(username), sessionToken, expiresAt);
+        } catch (IOException e) {
+            throw ApiException.client(ErrorCode.INTERNAL_ERROR, "Respuesta de inicio de sesión ilegible", e);
+        }
+    }
+
     private HttpRequest.Builder apiRequest(String path, Duration timeout) {
-        return HttpRequest.newBuilder(baseUrl.resolve(path))
+        HttpRequest.Builder builder = HttpRequest.newBuilder(baseUrl.resolve(path))
                 .timeout(timeout)
                 .header("X-Installation-Id", installationId.get().toString())
                 .header("X-Client-Version", clientVersion);
+        String bearer = token.get();
+        if (bearer != null) {
+            builder.header("Authorization", "Bearer " + bearer);
+        }
+        return builder;
     }
 
     /** Envía con un límite de tiempo total (incluye la descarga del cuerpo). */

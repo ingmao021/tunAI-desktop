@@ -45,6 +45,8 @@
                 </Button>
             </StackPane>
         </HBox>
+        <HBox fx:id="kpiRow" spacing="16"/>
+        <Label text="TUS VEHÍCULOS" styleClass="overline"/>
         <StackPane VBox.vgrow="ALWAYS">
             <ScrollPane fx:id="cardsScroll" fitToWidth="true" styleClass="edge-to-edge, garage-scroll">
                 <FlowPane fx:id="cardsPane" hgap="22" vgap="22">
@@ -82,6 +84,11 @@
                 <MenuItem text="Acerca de TunAI" onAction="#onAbout">
                     <graphic>
                         <FontIcon iconLiteral="mdal-info"/>
+                    </graphic>
+                </MenuItem>
+                <MenuItem fx:id="signOutItem" text="Cerrar sesión" onAction="#onSignOut">
+                    <graphic>
+                        <FontIcon iconLiteral="mdal-exit_to_app"/>
                     </graphic>
                 </MenuItem>
             </items>

@@ -126,11 +126,11 @@
             </HBox>
 
             <HBox styleClass="form-row" spacing="14" alignment="CENTER_LEFT">
-                <Label text="Nombre:" styleClass="text-bold"/>
-                <TextField fx:id="nameField" promptText="Ej: Mazda 3 2024" prefColumnCount="24"/>
+                <Label text="Nombre:" styleClass="text-bold" minWidth="-Infinity"/>
+                <TextField fx:id="nameField" promptText="Ej: Mazda 3 2024" prefColumnCount="18" minWidth="160"/>
                 <Label fx:id="quotaWarning" styleClass="warn-text, small" wrapText="true"
                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="Cancelar" styleClass="ghost" onAction="#onCancel"/>
+                <Button text="Cancelar" styleClass="ghost" onAction="#onCancel" minWidth="-Infinity"/>
                 <Button fx:id="generateButton" text="Generar modelo" styleClass="primary, large" onAction="#onGenerate"
                         contentDisplay="LEFT" minWidth="-Infinity">
                     <graphic>

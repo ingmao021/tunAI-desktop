@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ajustes de usuario: las secciones se arman en SettingsController con los helpers de Kpi. -->
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tunai.desktop.ui.SettingsController"
+            fitToWidth="true" styleClass="edge-to-edge, garage-scroll">
+    <VBox fx:id="page" spacing="28" maxWidth="760">
+        <padding>
+            <Insets top="26" right="32" bottom="32" left="32"/>
+        </padding>
+        <VBox spacing="0">
+            <Label text="Ajustes" styleClass="title-1, page-title"/>
+            <Label text="Tu cuenta, tus créditos y los datos de este equipo" styleClass="text-muted"/>
+        </VBox>
+    </VBox>
+</ScrollPane>

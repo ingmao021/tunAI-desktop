@@ -9,6 +9,8 @@ import java.util.Arrays;
 public enum ErrorCode {
 
     // Backend
+    INVALID_CREDENTIALS("Usuario o contraseña incorrectos.", Action.STAY),
+    UNAUTHORIZED("Tu sesión caducó. Inicia sesión de nuevo.", Action.SIGN_OUT),
     INVALID_INSTALLATION_ID("Hubo un problema con la instalación. Reinicia la app.", Action.REGENERATE_ID),
     INVALID_IMAGE("No pudimos leer la foto. Prueba con otra.", Action.BACK_TO_NEW_VEHICLE),
     IMAGE_TOO_LARGE("La foto pesa más de 10 MB.", Action.BACK_TO_NEW_VEHICLE),
@@ -51,6 +53,8 @@ public enum ErrorCode {
         SHOW_PLANS,
         /** Regenerar el installation-id y volver al garaje. */
         REGENERATE_ID,
+        /** La sesión no sirve: cerrarla y volver a la pantalla de inicio de sesión. */
+        SIGN_OUT,
         /** Quedarse en la pantalla actual. */
         STAY
     }

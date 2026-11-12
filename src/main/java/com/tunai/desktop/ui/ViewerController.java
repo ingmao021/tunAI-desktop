@@ -119,6 +119,10 @@ public class ViewerController implements NavigationAware {
     @FXML
     private void initialize() {
         viewerHost.getChildren().add(0, viewer);
+        Skeleton modelPlaceholder = Skeleton.block(420, 240);
+        modelPlaceholder.getStyleClass().add("skeleton-thumb");
+        modelPlaceholder.visibleProperty().bind(loadingIndicator.visibleProperty());
+        viewerHost.getChildren().add(1, modelPlaceholder);
         viewer.setVisible(false);
         viewerToolbar.setVisible(false);
         viewer.autoRotateProperty().bind(autoRotateToggle.selectedProperty());

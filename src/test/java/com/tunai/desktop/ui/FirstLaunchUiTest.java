@@ -38,6 +38,10 @@ class FirstLaunchUiTest extends FxRobot {
         System.setProperty("tunai.home", home.toString());
         // Servidor inexistente: el garaje debe funcionar igual.
         System.setProperty("tunai.api.url", "http://127.0.0.1:9");
+        // Con sesión válida (sin ella la primera pantalla es el inicio de sesión, ver LoginUiTest)
+        java.nio.file.Files.writeString(home.resolve("settings.json"),
+                "{\"account\":\"demo\",\"session\":{\"username\":\"demo\",\"token\":\"t\","
+                        + "\"expiresAt\":\"2099-01-01T00:00:00Z\"}}");
 
         FxToolkit.registerPrimaryStage();
         app = FxToolkit.setupApplication(App.class);

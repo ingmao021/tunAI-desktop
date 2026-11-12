@@ -17,10 +17,31 @@ public class Settings {
     /** Créditos que le quedan a esta instalación. Nulo = recién instalada (se reciben los iniciales). */
     public Integer credits;
 
+    /** Cuenta a la que pertenece {@link #credits}: al entrar con otra, el saldo se vuelve a pedir al backend. */
+    public String account;
+
+    /** Sesión iniciada; nula si hay que pedir las credenciales. Guarda el token, nunca la contraseña. */
+    public Session session;
+
+    /** Sidebar expandido (240 px) o compacto (72 px). */
+    public boolean sidebarExpanded;
+
     public Classifier classifier = new Classifier();
 
     public boolean hasConsent() {
         return consentAcceptedAt != null;
+    }
+
+    /** Hay un token que aún no caducó (con un minuto de margen). */
+    public boolean hasValidSession(Instant now) {
+        return session != null && session.token != null && !session.token.isBlank()
+                && session.expiresAt != null && session.expiresAt.isAfter(now.plusSeconds(60));
+    }
+
+    public static class Session {
+        public String username;
+        public String token;
+        public Instant expiresAt;
     }
 
     public static class Classifier {

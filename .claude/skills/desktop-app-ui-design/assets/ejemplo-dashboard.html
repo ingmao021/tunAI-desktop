@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estadísticas — Ejemplo Desktop UI</title>
+<style>
+/* =========================================================
+   Design tokens — Desktop App UI (estilo "Statistics")
+   Fuente canónica. 100% modo claro (no existe tema oscuro).
+   Copia este bloque al inicio de cualquier mockup o impórtalo
+   en el proyecto (src/styles/tokens.css).
+   ========================================================= */
+
+/* Solo tema claro: evita que el navegador/SO oscurezca controles nativos */
+:root { color-scheme: light; }
+
+:root {
+  /* ---------- Primitivos (no usar directamente en componentes) ---------- */
+  --green-50:  #ebfdf1;
+  --green-100: #d2fadf;
+  --green-300: #8ef3b2;
+  --green-500: #3beb7c;   /* PRIMARIO de marca (referencia) */
+  --green-600: #22c863;
+  --green-700: #117a3a;   /* verde para texto sobre blanco (5.4:1) */
+  --green-900: #0b2e17;   /* texto sobre verde 500 (9.4:1) */
+
+  --ink-950: #141414;
+  --ink-900: #1f1f1f;
+  --ink-800: #292929;     /* SECUNDARIO de marca (sidebar, barras oscuras) */
+  --ink-700: #3a3a3a;
+  --gray-600: #6b6b6b;    /* texto secundario (5.3:1 sobre blanco) */
+  --gray-500: #858585;    /* datos/segmentos, iconos inactivos (no para texto pequeño) */
+  --gray-400: #a3a3a3;
+  --gray-300: #bdbdbd;
+  --gray-200: #e4e4e4;
+  --gray-100: #ededed;
+  --gray-50:  #f6f6f6;
+  --white:    #ffffff;
+
+  --red-600:   #b42318;  --red-50:   #fef3f2;
+  --amber-600: #b54708;  --amber-50: #fffaeb;
+  --blue-600:  #2563eb;  --blue-50:  #eff6ff;
+
+  /* ---------- Semánticos (los que usan los componentes) ---------- */
+  --color-primary:            var(--green-500);
+  --color-primary-hover:      var(--green-600);
+  --color-on-primary:         var(--green-900);
+  --color-primary-subtle:     var(--green-50);
+  --color-primary-text:       var(--green-700);
+
+  --color-secondary:          var(--ink-800);
+  --color-secondary-hover:    var(--ink-700);
+  --color-on-secondary:       var(--white);
+
+  --color-bg-app:             var(--gray-200);   /* fondo detrás de la ventana/lienzo */
+  --color-bg-canvas:          var(--white);      /* área de contenido */
+  --color-bg-surface:         var(--white);      /* tarjetas */
+  --color-bg-subtle:          var(--gray-50);    /* hover de filas, inputs */
+  --color-bg-sidebar:         var(--ink-800);
+
+  --color-text:               var(--ink-900);
+  --color-text-secondary:     var(--gray-600);
+  --color-text-muted:         #737373;           /* etiquetas en mayúsculas (4.7:1) */
+  --color-text-on-sidebar:       var(--white);
+  --color-text-on-sidebar-muted: var(--gray-400);
+
+  --color-border:             #e2e2e2;
+  --color-border-strong:      var(--gray-300);
+  --color-track:              var(--gray-100);   /* pistas de progreso */
+  --color-focus-ring:         var(--green-500);
+
+  --color-success: var(--green-700); --color-success-bg: var(--green-50);
+  --color-danger:  var(--red-600);   --color-danger-bg:  var(--red-50);
+  --color-warning: var(--amber-600); --color-warning-bg: var(--amber-50);
+  --color-info:    var(--blue-600);  --color-info-bg:    var(--blue-50);
+
+  /* Serie de datos: verde primero, luego escala de grises */
+  --chart-1: var(--green-500);
+  --chart-2: var(--ink-800);
+  --chart-3: var(--gray-500);
+  --chart-4: var(--gray-300);
+
+  /* ---------- Tipografía ---------- */
+  --font-sans: "Inter", "Segoe UI Variable", "Segoe UI", -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  --text-display: 600 32px/40px var(--font-sans);
+  --text-h1:      700 28px/36px var(--font-sans);
+  --text-h2:      700 20px/28px var(--font-sans);
+  --text-h3:      600 16px/24px var(--font-sans);
+  --text-body:    400 14px/20px var(--font-sans);
+  --text-body-strong: 600 14px/20px var(--font-sans);
+  --text-small:   400 13px/18px var(--font-sans);
+  --text-caption: 500 12px/16px var(--font-sans);
+  --text-overline: 700 11px/16px var(--font-sans);   /* + letter-spacing .08em + uppercase */
+
+  /* ---------- Espaciado (base 4) ---------- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  /* ---------- Radios ---------- */
+  --radius-xs: 4px;    /* chips de tabla, checkboxes */
+  --radius-sm: 8px;    /* inputs pequeños, menús */
+  --radius-md: 12px;   /* tarjetas, botones */
+  --radius-lg: 16px;   /* sidebar, modales */
+  --radius-xl: 24px;   /* ventana / lienzo principal */
+  --radius-full: 999px;
+
+  /* ---------- Elevación ---------- */
+  --shadow-xs: 0 1px 2px rgba(20,20,20,.06);
+  --shadow-sm: 0 2px 8px rgba(20,20,20,.06);
+  --shadow-md: 0 8px 24px rgba(20,20,20,.08);
+  --shadow-lg: 0 24px 48px rgba(20,20,20,.12);
+  --shadow-focus: 0 0 0 3px rgba(59,235,124,.45);
+
+  /* ---------- Movimiento ---------- */
+  --dur-instant: 80ms;   /* press */
+  --dur-fast: 140ms;     /* hover, color */
+  --dur-base: 220ms;     /* menús, tooltips, toggles */
+  --dur-slow: 360ms;     /* modales, paneles */
+  --dur-data: 900ms;     /* barras, gauges, contadores */
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-out:      cubic-bezier(.16, 1, .3, 1);
+  --ease-in:       cubic-bezier(.4, 0, 1, 1);
+  --ease-spring:   cubic-bezier(.34, 1.56, .64, 1);
+
+  /* ---------- Layout ---------- */
+  --sidebar-w: 72px;
+  --sidebar-w-expanded: 240px;
+  --topbar-h: 64px;
+  --content-max: 1200px;
+  --z-dropdown: 100; --z-sticky: 200; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; --dur-slow: 0ms; --dur-data: 0ms; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+
+/* =================== Base =================== */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:var(--text-body);color:var(--color-text);background:var(--color-bg-app);
+     display:grid;place-items:center;padding:32px;-webkit-font-smoothing:antialiased;
+     transition:background var(--dur-base) var(--ease-standard)}
+button,input{font:inherit;color:inherit}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.sm{width:16px;height:16px}
+:focus-visible{outline:none;box-shadow:var(--shadow-focus)}
+.num{font-variant-numeric:tabular-nums}
+
+/* =================== Shell =================== */
+.app{width:1200px;height:760px;display:flex;gap:var(--space-8);padding:var(--space-3) var(--space-8) var(--space-3) var(--space-3);
+     background:var(--color-bg-canvas);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+     transition:background var(--dur-base) var(--ease-standard)}
+.main{flex:1;min-width:0;padding-top:var(--space-6);display:flex;flex-direction:column}
+
+/* =================== Sidebar =================== */
+.sidebar{width:var(--sidebar-w);flex:none;background:var(--color-bg-sidebar);border-radius:var(--radius-lg);
+         display:flex;flex-direction:column;align-items:center;padding:var(--space-5) 0;position:relative}
+.nav{display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-6);position:relative}
+.nav-indicator{position:absolute;left:0;top:0;width:44px;height:44px;border-radius:var(--radius-md);
+               background:rgba(59,235,124,.14);transition:transform var(--dur-slow) var(--ease-out);pointer-events:none}
+.nav-indicator::before{content:"";position:absolute;left:-14px;top:12px;width:4px;height:20px;border-radius:0 4px 4px 0;background:var(--color-primary)}
+.nav-btn{position:relative;width:44px;height:44px;border:0;border-radius:var(--radius-md);background:transparent;
+         color:var(--color-text-on-sidebar-muted);display:grid;place-items:center;cursor:pointer;
+         transition:color var(--dur-fast) var(--ease-standard),background var(--dur-fast) var(--ease-standard),transform var(--dur-instant) var(--ease-standard)}
+.nav-btn:hover{color:var(--white);background:rgba(255,255,255,.06)}
+.nav-btn:active{transform:scale(.92)}
+.nav-btn[aria-current="page"]{color:var(--color-primary);background:transparent}
+.nav-btn .dot{position:absolute;top:10px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 0 2px var(--color-bg-sidebar)}
+/* Tooltip */
+[data-tip]::after{content:attr(data-tip);position:absolute;left:calc(100% + 14px);top:50%;transform:translate(-4px,-50%);
+  background:var(--ink-950);color:var(--white);font:var(--text-caption);padding:6px 10px;border-radius:var(--radius-sm);
+  white-space:nowrap;opacity:0;pointer-events:none;box-shadow:var(--shadow-md);z-index:var(--z-tooltip);
+  transition:opacity var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-out)}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translate(0,-50%);transition-delay:300ms}
+.sidebar .bottom{margin-top:auto}
+
+/* =================== Header =================== */
+.header{display:flex;align-items:center;gap:var(--space-3)}
+.header h1{font:var(--text-h1);margin:0;margin-right:auto;letter-spacing:-.01em}
+.search{position:relative;display:flex;align-items:center}
+.search input{width:240px;height:40px;border:1px solid var(--color-border-strong);border-radius:var(--radius-full);
+  background:var(--color-bg-surface);padding:0 70px 0 16px;font:var(--text-small);
+  transition:border-color var(--dur-fast),box-shadow var(--dur-fast),width var(--dur-base) var(--ease-out)}
+.search input::placeholder{color:var(--color-text-muted)}
+.search input:hover{border-color:var(--gray-500)}
+.search input:focus{outline:none;border-color:var(--color-primary);box-shadow:var(--shadow-focus);width:300px}
+.search .kbd{position:absolute;right:38px;font:var(--text-caption);color:var(--color-text-muted);border:1px solid var(--color-border);border-radius:var(--radius-xs);padding:0 5px;background:var(--color-bg-subtle)}
+.search svg{position:absolute;right:14px;color:var(--color-text-muted)}
+
+/* =================== Botones =================== */
+.btn{--h:40px;position:relative;overflow:hidden;height:var(--h);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);
+  padding:0 var(--space-4);border-radius:var(--radius-md);border:1px solid transparent;font:var(--text-body-strong);cursor:pointer;user-select:none;
+  transition:background var(--dur-fast) var(--ease-standard),border-color var(--dur-fast),color var(--dur-fast),
+             box-shadow var(--dur-fast) var(--ease-standard),transform var(--dur-instant) var(--ease-standard)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--color-primary);color:var(--color-on-primary)}
+.btn-primary:hover:not(:disabled){background:var(--color-primary-hover);box-shadow:0 6px 16px rgba(59,235,124,.35);transform:translateY(-1px)}
+.btn-secondary{background:var(--color-secondary);color:var(--color-on-secondary)}
+.btn-secondary:hover:not(:disabled){background:var(--color-secondary-hover);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.btn-outline{background:var(--color-bg-surface);border-color:var(--color-border-strong);color:var(--color-text)}
+.btn-outline:hover:not(:disabled){background:var(--color-bg-subtle);border-color:var(--gray-500)}
+.btn-ghost{background:transparent;color:var(--color-text-secondary)}
+.btn-ghost:hover:not(:disabled){background:var(--color-bg-subtle);color:var(--color-text)}
+.btn-icon{width:var(--h);padding:0}
+.btn .spinner{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;display:none}
+.btn[data-loading] .spinner{display:block}
+.btn[data-loading] .label-ico{display:none}
+.ripple{position:absolute;border-radius:50%;transform:scale(0);background:currentColor;opacity:.22;pointer-events:none;animation:ripple 520ms var(--ease-out) forwards}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* =================== Tipos comunes =================== */
+.overline{font:var(--text-overline);letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted);margin:var(--space-8) 0 var(--space-3)}
+.card{background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-6);
+      transition:box-shadow var(--dur-base) var(--ease-standard),border-color var(--dur-base),background var(--dur-base)}
+.card:hover{box-shadow:var(--shadow-sm)}
+.caption{font:var(--text-caption);color:var(--color-text-secondary)}
+.chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:var(--radius-full);font:var(--text-caption)}
+.chip.up{background:var(--color-success-bg);color:var(--color-success)}
+.chip.down{background:var(--color-danger-bg);color:var(--color-danger)}
+
+/* Entrada escalonada */
+.reveal{opacity:0;transform:translateY(8px);animation:reveal var(--dur-slow) var(--ease-out) forwards;animation-delay:calc(var(--i,0) * 70ms)}
+@keyframes reveal{to{opacity:1;transform:none}}
+
+/* =================== KPI + barra segmentada =================== */
+.kpi-head{display:flex;align-items:flex-start;gap:var(--space-4)}
+.kpi-value{font:700 28px/34px var(--font-sans);letter-spacing:-.01em;margin-top:2px;display:flex;align-items:center;gap:var(--space-3)}
+.tabs{margin-left:auto;position:relative;display:flex;background:var(--color-bg-subtle);border-radius:var(--radius-full);padding:4px}
+.tabs .pill{position:absolute;top:4px;left:4px;height:32px;border-radius:var(--radius-full);background:var(--color-bg-surface);box-shadow:var(--shadow-xs);
+            transition:transform var(--dur-base) var(--ease-out),width var(--dur-base) var(--ease-out)}
+.tab{position:relative;z-index:1;height:32px;padding:0 14px;border:0;background:transparent;border-radius:var(--radius-full);font:var(--text-caption);
+     color:var(--color-text-secondary);cursor:pointer;transition:color var(--dur-fast)}
+.tab[aria-selected="true"]{color:var(--color-text);font-weight:600}
+.segbar{display:flex;height:48px;border-radius:var(--radius-md);overflow:hidden;margin-top:var(--space-6);gap:0}
+.seg{position:relative;width:0;transition:width var(--dur-data) var(--ease-out),filter var(--dur-fast);cursor:pointer}
+.seg:hover{filter:brightness(1.08)}
+.seg[data-tipv]::after{content:attr(data-tipv);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translate(-50%,4px);background:var(--ink-950);color:#fff;
+  font:var(--text-caption);padding:6px 10px;border-radius:var(--radius-sm);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--dur-fast),transform var(--dur-fast) var(--ease-out)}
+.segbar{overflow:visible}
+.seg:first-child{border-radius:var(--radius-md) 0 0 var(--radius-md)}
+.seg:last-child{border-radius:0 var(--radius-md) var(--radius-md) 0}
+.seg:hover::after{opacity:1;transform:translate(-50%,0)}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4) var(--space-12);margin-top:var(--space-6)}
+.legend-row{display:grid;grid-template-columns:44px 64px 1fr;align-items:center;gap:var(--space-4)}
+.legend-row b{font:var(--text-body-strong)}
+.legend-row span{color:var(--color-text-secondary);font-weight:500}
+.mini{height:8px;border-radius:var(--radius-full);background:var(--color-track);overflow:hidden}
+.mini i{display:block;height:100%;width:0;border-radius:inherit;transition:width var(--dur-data) var(--ease-out)}
+
+/* =================== Fila inferior =================== */
+.row{display:grid;grid-template-columns:1fr 300px;gap:var(--space-6)}
+table{width:100%;border-collapse:collapse}
+th{font:var(--text-caption);color:var(--color-text-muted);text-align:left;padding:0 var(--space-3) var(--space-2);white-space:nowrap}
+th button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;border-radius:var(--radius-xs)}
+th button:hover{color:var(--color-text)}
+th button svg{transition:transform var(--dur-base) var(--ease-out);opacity:.5}
+th button[data-dir="asc"] svg{transform:rotate(180deg);opacity:1}
+th button[data-dir="desc"] svg{opacity:1}
+td{padding:12px var(--space-3);border-top:1px solid var(--color-border);transition:background var(--dur-fast)}
+tbody tr{cursor:default}
+tbody tr:hover td{background:var(--color-bg-subtle)}
+tbody tr:hover td:first-child{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+tbody tr:hover td:last-child{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+td.name{font-weight:600}
+td.date{color:var(--color-text-secondary)}
+.gauge-wrap{position:relative;display:grid;place-items:center;margin-top:var(--space-2)}
+.gauge-wrap svg{width:200px;height:120px}
+.gauge-arc{transition:stroke-dashoffset var(--dur-data) var(--ease-out)}
+.gauge-val{position:absolute;bottom:4px;font:600 40px/1 var(--font-sans);letter-spacing:-.02em}
+.gauge-val small{font-size:16px;font-weight:500;margin-left:2px}
+
+/* =================== Toast =================== */
+.toasts{position:fixed;right:24px;bottom:24px;display:flex;flex-direction:column;gap:8px;z-index:var(--z-toast)}
+.toast{display:flex;align-items:center;gap:var(--space-3);min-width:300px;padding:12px 14px;border-radius:var(--radius-md);
+  background:var(--ink-900);color:#fff;box-shadow:var(--shadow-lg);animation:toast-in var(--dur-slow) var(--ease-spring)}
+.toast .ok{width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:grid;place-items:center}
+.toast.out{animation:toast-out var(--dur-base) var(--ease-in) forwards}
+@keyframes toast-in{from{opacity:0;transform:translateY(12px) scale(.96)}}
+@keyframes toast-out{to{opacity:0;transform:translateX(24px)}}
+</style>
+</head>
+<body>
+<!-- Iconos: Lucide (ISC). Trazo 2px, 24×24. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></symbol>
+  <symbol id="house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="layout" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="hexagon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+  <symbol id="trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
+  <symbol id="chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="filter" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></symbol>
+</svg>
+
+<div class="app">
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar" aria-label="Navegación principal">
+    <button class="nav-btn" data-tip="Menú" aria-label="Abrir menú"><svg class="i"><use href="#menu"/></svg></button>
+    <nav class="nav">
+      <span class="nav-indicator" aria-hidden="true"></span>
+      <button class="nav-btn" data-tip="Inicio" aria-label="Inicio"><svg class="i"><use href="#house"/></svg></button>
+      <button class="nav-btn" data-tip="Estadísticas" aria-label="Estadísticas" aria-current="page"><svg class="i"><use href="#chart"/></svg></button>
+      <button class="nav-btn" data-tip="Favoritos" aria-label="Favoritos"><svg class="i"><use href="#star"/></svg></button>
+      <button class="nav-btn" data-tip="Tableros" aria-label="Tableros"><svg class="i"><use href="#layout"/></svg></button>
+      <button class="nav-btn" data-tip="Notificaciones" aria-label="Notificaciones"><svg class="i"><use href="#bell"/></svg><span class="dot"></span></button>
+    </nav>
+    <button class="nav-btn bottom" data-tip="Ajustes" aria-label="Ajustes"><svg class="i"><use href="#hexagon"/></svg></button>
+  </aside>
+
+  <!-- ============ Contenido ============ -->
+  <main class="main">
+    <header class="header reveal" style="--i:0">
+      <h1>Estadísticas</h1>
+      <label class="search">
+        <input id="search" type="search" placeholder="Buscar" aria-label="Buscar">
+        <span class="kbd">Ctrl K</span>
+        <svg class="i sm"><use href="#search"/></svg>
+      </label>
+      <button class="btn btn-outline"><svg class="i sm"><use href="#filter"/></svg>Filtros</button>
+      <button class="btn btn-primary" id="export"><span class="spinner"></span><svg class="i sm label-ico"><use href="#download"/></svg><span class="lbl">Exportar</span></button>
+    </header>
+
+    <div class="overline reveal" style="--i:1">Resumen de ventas</div>
+    <section class="card reveal" style="--i:2">
+      <div class="kpi-head">
+        <div>
+          <div class="caption">Analítica</div>
+          <div class="kpi-value"><span class="num" id="kpi">0.00</span>
+            <span class="chip up"><svg class="i sm"><use href="#trending-up"/></svg>+12,4%</span></div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Periodo">
+          <span class="pill" aria-hidden="true"></span>
+          <button class="tab" role="tab" aria-selected="false" data-set="0">Día</button>
+          <button class="tab" role="tab" aria-selected="true"  data-set="1">Semana</button>
+          <button class="tab" role="tab" aria-selected="false" data-set="2">Mes</button>
+        </div>
+      </div>
+      <div class="segbar" id="segbar">
+        <div class="seg" style="background:var(--chart-1)"></div>
+        <div class="seg" style="background:var(--chart-2)"></div>
+        <div class="seg" style="background:var(--chart-3)"></div>
+        <div class="seg" style="background:var(--chart-4)"></div>
+      </div>
+      <div class="legend" id="legend">
+        <div class="legend-row"><b class="num">0%</b><div class="mini"><i style="background:var(--chart-1)"></i></div><span>Tienda online</span></div>
+        <div class="legend-row"><b class="num">0%</b><div class="mini"><i style="background:var(--chart-3)"></i></div><span>Distribuidores</span></div>
+        <div class="legend-row"><b class="num">0%</b><div class="mini"><i style="background:var(--chart-2)"></i></div><span>Tiendas físicas</span></div>
+        <div class="legend-row"><b class="num">0%</b><div class="mini"><i style="background:var(--chart-4)"></i></div><span>Otros</span></div>
+      </div>
+    </section>
+
+    <div class="row">
+      <div>
+        <div class="overline reveal" style="--i:3">Productos destacados</div>
+        <section class="card reveal" style="--i:4;padding:var(--space-4) var(--space-4) var(--space-2)">
+          <table>
+            <thead><tr>
+              <th><button data-key="name">Producto<svg class="i sm"><use href="#chevron-down"/></svg></button></th>
+              <th><button data-key="date" data-dir="desc">Fecha<svg class="i sm"><use href="#chevron-down"/></svg></button></th>
+              <th><button data-key="units">Unidades<svg class="i sm"><use href="#chevron-down"/></svg></button></th>
+              <th><button data-key="delta">Variación<svg class="i sm"><use href="#chevron-down"/></svg></button></th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </section>
+      </div>
+      <div>
+        <div class="overline reveal" style="--i:5">Meta mensual</div>
+        <section class="card reveal" style="--i:6;padding:var(--space-4)">
+          <div class="caption">Cumplimiento</div>
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 200 120" aria-hidden="true">
+              <path d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="var(--color-track)" stroke-width="14" stroke-linecap="round"/>
+              <path class="gauge-arc" id="arc" d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="var(--color-primary)" stroke-width="14" stroke-linecap="round"
+                    stroke-dasharray="251.33" stroke-dashoffset="251.33"/>
+            </svg>
+            <div class="gauge-val num" role="img" aria-label="75 por ciento"><span id="gv">0</span><small>%</small></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* ---- Contador numérico animado ---- */
+function countTo(el, to, { dur = 900, decimals = 0, suffix = '', locale = 'es-CO' } = {}) {
+  const from = parseFloat(el.dataset.v || 0); el.dataset.v = to;
+  const fmt = v => v.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+  if (reduce) { el.textContent = fmt(to); return; }
+  const t0 = performance.now(), ease = t => 1 - Math.pow(1 - t, 4);
+  (function step(now) {
+    const p = Math.min(1, (now - t0) / dur), v = from + (to - from) * ease(p);
+    el.textContent = fmt(v);
+    if (p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
+/* ---- Datos por periodo ---- */
+const sets = [
+  { total: 812.40,  parts: [52, 28, 12, 8] },
+  { total: 4725.05, parts: [40, 35, 15, 10] },
+  { total: 19830.7, parts: [34, 38, 18, 10] },
+];
+const labels = ['Tienda online', 'Tiendas físicas', 'Distribuidores', 'Otros'];
+const legendOrder = [0, 2, 1, 3]; // la leyenda se lee por columnas
+function renderSet(i) {
+  const d = sets[i];
+  countTo($('#kpi'), d.total, { decimals: 2 });
+  $$('.seg').forEach((s, k) => { s.style.width = d.parts[k] + '%'; s.dataset.tipv = `${labels[k]} · ${d.parts[k]}%`; });
+  $$('.legend-row').forEach((row, r) => {
+    const k = legendOrder[r];
+    row.querySelector('i').style.width = d.parts[k] * 2 + '%';
+    countTo(row.querySelector('b'), d.parts[k], { dur: 700, suffix: '%' });
+  });
+}
+
+/* ---- Tabs con píldora deslizante ---- */
+function movePill() {
+  const sel = $('.tab[aria-selected="true"]'), pill = $('.tabs .pill');
+  pill.style.width = sel.offsetWidth + 'px'; pill.style.transform = `translateX(${sel.offsetLeft - 4}px)`;
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => {
+  $$('.tab').forEach(x => x.setAttribute('aria-selected', x === t)); movePill(); renderSet(+t.dataset.set);
+}));
+
+/* ---- Sidebar: indicador deslizante ---- */
+function moveIndicator() {
+  const cur = $('.nav .nav-btn[aria-current="page"]'); $('.nav-indicator').style.transform = `translateY(${cur.offsetTop}px)`;
+}
+$$('.nav .nav-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.nav .nav-btn').forEach(x => x.removeAttribute('aria-current')); b.setAttribute('aria-current', 'page'); moveIndicator();
+}));
+
+/* ---- Tabla ordenable ---- */
+let rows = [
+  { name: 'Auriculares Pro', date: '2026-11-03', units: 322, delta: 4.33 },
+  { name: 'Teclado mecánico', date: '2026-11-02', units: 173, delta: 3.3 },
+  { name: 'Monitor 27"', date: '2026-11-01', units: 456, delta: -1.2 },
+];
+const fmtDate = s => new Date(s + 'T00:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function renderRows() {
+  $('#tbody').innerHTML = rows.map(r => `<tr>
+    <td class="name">${r.name}</td><td class="date num">${fmtDate(r.date)}</td><td class="num">${r.units}</td>
+    <td><span class="chip ${r.delta >= 0 ? 'up' : 'down'} num">${r.delta >= 0 ? '+' : ''}${r.delta.toLocaleString('es-CO')}%</span></td></tr>`).join('');
+}
+$$('th button').forEach(b => b.addEventListener('click', () => {
+  const dir = b.dataset.dir === 'asc' ? 'desc' : 'asc';
+  $$('th button').forEach(x => delete x.dataset.dir); b.dataset.dir = dir;
+  const k = b.dataset.key;
+  rows.sort((a, c) => (a[k] > c[k] ? 1 : -1) * (dir === 'asc' ? 1 : -1)); renderRows();
+}));
+
+/* ---- Ripple en botones ---- */
+document.addEventListener('pointerdown', e => {
+  const btn = e.target.closest('.btn'); if (!btn || btn.disabled || reduce) return;
+  const r = btn.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2, s = document.createElement('span');
+  s.className = 'ripple'; Object.assign(s.style, { width: size + 'px', height: size + 'px', left: e.clientX - r.left - size / 2 + 'px', top: e.clientY - r.top - size / 2 + 'px' });
+  btn.appendChild(s); s.addEventListener('animationend', () => s.remove());
+});
+
+/* ---- Exportar: carga → toast ---- */
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.role = 'status';
+  t.innerHTML = `<span class="ok"><svg class="i sm"><use href="#check"/></svg></span><div><b>${msg}</b><div class="caption" style="color:#a3a3a3">estadisticas_nov.csv · 24 KB</div></div>`;
+  $('#toasts').appendChild(t);
+  setTimeout(() => { t.classList.add('out'); t.addEventListener('animationend', () => t.remove()); }, 3200);
+}
+$('#export').addEventListener('click', e => {
+  const b = e.currentTarget; if (b.dataset.loading !== undefined) return;
+  b.dataset.loading = ''; b.setAttribute('aria-busy', 'true'); $('.lbl', b).textContent = 'Exportando…';
+  setTimeout(() => { delete b.dataset.loading; b.removeAttribute('aria-busy'); $('.lbl', b).textContent = 'Exportar'; toast('Reporte exportado'); }, 1400);
+});
+
+/* ---- Atajo Ctrl/⌘+K ---- */
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#search').focus(); } });
+
+/* ---- Arranque ---- */
+renderRows(); movePill(); moveIndicator();
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  renderSet(1);
+  $('#arc').style.strokeDashoffset = 251.33 * (1 - .75);
+  countTo($('#gv'), 75);
+}));
+</script>
+</body>
+</html>

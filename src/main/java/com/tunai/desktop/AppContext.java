@@ -1,6 +1,8 @@
 package com.tunai.desktop;
 
 import com.tunai.desktop.api.ApiConfig;
+import com.tunai.desktop.api.AuthSession;
+import com.tunai.desktop.config.Settings;
 import com.tunai.desktop.api.TunaiApiClient;
 import com.tunai.desktop.classifier.OnnxVehicleClassifier;
 import com.tunai.desktop.config.AppPaths;
@@ -13,6 +15,7 @@ import com.tunai.desktop.ui.ServerMonitor;
 import com.tunai.desktop.ui.SessionState;
 import javafx.stage.Stage;
 
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,6 +46,9 @@ public class AppContext {
         this.garage = new GarageRepository(paths.garageDir());
         this.api = new TunaiApiClient(ApiConfig.resolveBaseUrl(settings.get()), installationId::value, App.version());
         this.serverMonitor = new ServerMonitor(api, session, installationId);
+        api.useToken(() -> hasValidSession() ? settings.get().session.token : null);
+        serverMonitor.whenSignedIn(this::hasValidSession);
+        serverMonitor.onSessionRejected(this::signOut);
         this.classifier = new OnnxVehicleClassifier(() -> settings.get().classifier.threshold,
                 paths.root().resolve("vehicle-classes.txt"));
         Integer credits = settings.get().credits;
@@ -67,6 +73,48 @@ public class AppContext {
             session.creditsProperty().set(credits);
             settings.get().credits = credits;
             settings.save();
+        }
+    }
+
+    /** Hay una sesión con token vigente; si no, la app muestra el inicio de sesión. */
+    public boolean hasValidSession() {
+        return settings.get().hasValidSession(Instant.now());
+    }
+
+    /** Nombre de la cuenta con sesión iniciada, o nulo. */
+    public String username() {
+        Settings.Session current = settings.get().session;
+        return hasValidSession() ? current.username : null;
+    }
+
+    /**
+     * Guarda la sesión recién iniciada. Los créditos son de la cuenta: al entrar con otra distinta se parte del saldo
+     * inicial y el backend lo corrige. Solo en el hilo de JavaFX.
+     */
+    public void signIn(AuthSession authSession) {
+        Settings current = settings.get();
+        if (current.account == null || !current.account.equalsIgnoreCase(authSession.username())) {
+            current.credits = null;
+            session.creditsProperty().set(Credits.INITIAL);
+            session.quotaProperty().set(null);
+        }
+        current.account = authSession.username();
+        Settings.Session saved = new Settings.Session();
+        saved.username = authSession.username();
+        saved.token = authSession.token();
+        saved.expiresAt = authSession.expiresAt();
+        current.session = saved;
+        settings.save();
+        serverMonitor.refreshQuota();
+    }
+
+    /** Cierra la sesión y vuelve al inicio de sesión. El garaje local no se toca. Solo en el hilo de JavaFX. */
+    public void signOut() {
+        settings.get().session = null;
+        settings.save();
+        session.quotaProperty().set(null);
+        if (navigator != null) {
+            navigator.goTo(Navigator.Screen.LOGIN);
         }
     }
 

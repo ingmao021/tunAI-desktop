@@ -29,6 +29,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -60,6 +61,8 @@ public class GarageController implements NavigationAware {
     private final Tooltip newVehicleTooltip = new Tooltip();
 
     @FXML
+    private MenuItem signOutItem;
+    @FXML
     private Label serverStatusLabel;
     @FXML
     private Label quotaLabel;
@@ -79,6 +82,11 @@ public class GarageController implements NavigationAware {
     private VBox emptyState;
     @FXML
     private Label emptyLabel;
+    @FXML
+    private javafx.scene.layout.HBox kpiRow;
+    private final Label kpiVehicles = new Label();
+    private final Label kpiCredits = new Label();
+    private final Label kpiModels = new Label();
 
     public GarageController(AppContext context) {
         this.context = context;
@@ -87,6 +95,12 @@ public class GarageController implements NavigationAware {
     @FXML
     private void initialize() {
         newVehicleTooltip.setShowDelay(Duration.millis(200));
+        kpiRow.getChildren().setAll(
+                Kpi.card("Vehículos", kpiVehicles, new Label("guardados en tu garaje")),
+                Kpi.card("Créditos", kpiCredits, new Label("disponibles")),
+                Kpi.card("Modelos", kpiModels, new Label("que puedes generar")));
+        String username = context.username();
+        signOutItem.setText(username != null ? "Cerrar sesión (" + username + ")" : "Cerrar sesión");
         context.session().serverStatusProperty().addListener(statusListener);
         context.session().quotaProperty().addListener(statusListener);
         context.session().creditsProperty().addListener(statusListener);
@@ -96,6 +110,7 @@ public class GarageController implements NavigationAware {
             context.serverMonitor().refreshQuota();
         }
 
+        installConnectionBanner();
         BooleanBinding empty = Bindings.isEmpty(cardsPane.getChildren());
         emptyState.visibleProperty().bind(empty);
         emptyLabel.visibleProperty().bind(empty);
@@ -116,6 +131,9 @@ public class GarageController implements NavigationAware {
         Quota quota = context.session().getQuota();
         quotaLabel.setText(Credits.header(context.session().getCredits()));
         quotaLabel.setGraphic(Credits.icon(16));
+        kpiCredits.setText(String.valueOf(context.session().getCredits()));
+        kpiModels.setText(String.valueOf(Credits.models(context.session().getCredits(),
+                context.session().getCreditsPerModel())));
 
         // Sin créditos el botón sigue activo: al pulsarlo se ofrecen los planes (la cuota también llega en cero).
         String blockedReason = null;
@@ -134,9 +152,40 @@ public class GarageController implements NavigationAware {
         }
     }
 
+    /** Banner bajo la cabecera: "conectando" (skeleton) mientras despierta el servicio y "sin conexión" con reintento. */
+    private void installConnectionBanner() {
+        Label connectingText = new Label("Despertando el servicio de IA. Puede tardar hasta un minuto.");
+        HBox connecting = new HBox(14, Skeleton.line(56), connectingText);
+        connecting.getStyleClass().addAll("banner", "banner-info");
+        connecting.setAlignment(Pos.CENTER_LEFT);
+
+        Label offlineText = new Label("Sin conexión con el servicio. Tus vehículos siguen disponibles; crear uno nuevo requiere conexión.");
+        offlineText.setWrapText(true);
+        Button retry = new Button("Reintentar", new FontIcon("mdmz-refresh"));
+        retry.setOnAction(e -> context.serverMonitor().retryNow());
+        javafx.scene.layout.Region grow = new javafx.scene.layout.Region();
+        HBox.setHgrow(grow, javafx.scene.layout.Priority.ALWAYS);
+        HBox offline = new HBox(12, new FontIcon("mdmz-wifi_off"), offlineText, grow, retry);
+        offline.getStyleClass().addAll("banner", "banner-warning");
+        offline.setAlignment(Pos.CENTER_LEFT);
+
+        for (HBox banner : List.of(connecting, offline)) {
+            banner.setMaxWidth(Double.MAX_VALUE);
+        }
+        connecting.visibleProperty().bind(context.session().serverStatusProperty()
+                .isEqualTo(SessionState.ServerStatus.CONNECTING));
+        offline.visibleProperty().bind(context.session().serverStatusProperty()
+                .isEqualTo(SessionState.ServerStatus.OFFLINE));
+        connecting.managedProperty().bind(connecting.visibleProperty());
+        offline.managedProperty().bind(offline.visibleProperty());
+        VBox parent = (VBox) kpiRow.getParent();
+        parent.getChildren().addAll(parent.getChildren().indexOf(kpiRow), List.of(connecting, offline));
+    }
+
     private void reloadVehicles() {
         List<GarageVehicle> vehicles = context.garage().list();
         cardsPane.getChildren().setAll(vehicles.stream().map(this::createCard).toList());
+        kpiVehicles.setText(String.valueOf(vehicles.size()));
         countLabel.setText(switch (vehicles.size()) {
             case 0 -> "";
             case 1 -> "1 vehículo";
@@ -149,10 +198,10 @@ public class GarageController implements NavigationAware {
         thumb.setFitWidth(THUMB_SIZE);
         thumb.setFitHeight(THUMB_SIZE);
         thumb.setPreserveRatio(true);
-        vehicle.thumbnail().ifPresent(p -> thumb.setImage(new Image(p.toUri().toString(), true)));
         StackPane thumbBox = new StackPane(thumb);
         thumbBox.setPrefSize(THUMB_SIZE, THUMB_SIZE);
         thumbBox.getStyleClass().add("thumb-box");
+        vehicle.thumbnail().ifPresent(p -> showThumbnail(thumb, thumbBox, p));
         if (vehicle.thumbnail().isEmpty()) {
             Label noThumb = new Label("Sin vista previa", new FontIcon("mdal-directions_car"));
             noThumb.setContentDisplay(ContentDisplay.TOP);
@@ -191,6 +240,45 @@ public class GarageController implements NavigationAware {
         menu.getItems().setAll(actionItems(vehicle));
         card.setOnContextMenuRequested(e -> menu.show(card, e.getScreenX(), e.getScreenY()));
         return card;
+    }
+
+    /** Carga la miniatura en segundo plano: skeleton mientras llega y estado de error si no se puede leer. */
+    private static void showThumbnail(ImageView view, StackPane box, java.nio.file.Path file) {
+        Image image = new Image(file.toUri().toString(), true);
+        view.setImage(image);
+        Skeleton placeholder = Skeleton.block(THUMB_SIZE, THUMB_SIZE);
+        placeholder.getStyleClass().add("skeleton-thumb");
+        box.getChildren().add(placeholder);
+        Runnable done = () -> box.getChildren().remove(placeholder);
+        if (image.isError()) {
+            done.run();
+            box.getChildren().add(thumbError());
+            return;
+        }
+        if (image.getProgress() >= 1) {
+            done.run();
+            return;
+        }
+        image.progressProperty().addListener((o, a, p) -> {
+            if (p.doubleValue() >= 1) {
+                done.run();
+            }
+        });
+        image.errorProperty().addListener((o, a, failed) -> {
+            if (failed) {
+                done.run();
+                box.getChildren().add(thumbError());
+            }
+        });
+    }
+
+    private static Label thumbError() {
+        Label error = new Label("No se pudo leer la vista previa", new FontIcon("mdmz-report_problem"));
+        error.setContentDisplay(ContentDisplay.TOP);
+        error.setWrapText(true);
+        error.setMaxWidth(THUMB_SIZE - 32);
+        error.getStyleClass().addAll("warn-text", Styles.TEXT_SMALL);
+        return error;
     }
 
     /** Chip con el color aplicado, para reconocer el vehículo de un vistazo. */
@@ -268,7 +356,7 @@ public class GarageController implements NavigationAware {
 
     /** Importa un GLB del disco (p. ej. uno exportado o el respaldo de un ensayo). Gratis y sin conexión. */
     @FXML
-    private void onOpenModel() {
+    void onOpenModel() {
         File file = VehicleImport.chooseSource(context);
         if (file == null) {
             return;
@@ -313,5 +401,10 @@ public class GarageController implements NavigationAware {
     @FXML
     private void onAbout() {
         AboutDialog.show(context);
+    }
+
+    @FXML
+    private void onSignOut() {
+        context.signOut();
     }
 }

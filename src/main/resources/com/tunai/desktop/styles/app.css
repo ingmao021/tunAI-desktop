@@ -1,91 +1,94 @@
 /*
- * TunAI "Showroom": sistema de diseño claro sobre AtlantaFX (Cupertino Light, ver App#start).
+ * TunAI: sistema de diseño claro "Statistics" (skill desktop-app-ui-design) sobre AtlantaFX (Cupertino Light, ver App#start).
  *
  * 1. Tokens: redefinen las variables -color-* del tema. Así todos los controles de AtlantaFX
  *    (botones, menús, diálogos, popups…) heredan la marca sin estilos sueltos.
  * 2. Clases propias de TunAI, siempre a partir de los tokens.
  *
- * Identidad: showroom claro + grafito metálico (como el cromo del logo) + acento azul "Volt". Títulos en Rajdhani
- * (Resources#loadFonts); el texto corrido sigue en la fuente del sistema, que lee mejor.
+ * Identidad: lienzo blanco sobre fondo gris #e4e4e4, carbón #292929, UN acento verde #3beb7c.
+ * Reglas de contraste: sobre el verde va texto #0b2e17 (nunca blanco); el verde como texto sobre blanco es #117a3a.
+ * Tarjetas planas: borde 1px, radio 12, sin sombra en reposo. Solo tema claro.
+ * Tipografía: Segoe UI (fuente del sistema), sin fuentes decorativas.
  */
 
 /* ===================================================================== Tokens */
 .root {
-    /* Escala neutra con tinte frío (gris acero); el tema la usa en hovers y bordes */
+    /* Escala neutra (grises puros) */
     -color-base-0: #ffffff;
-    -color-base-1: #f6f8fb;
-    -color-base-2: #eef1f5;
-    -color-base-3: #e3e7ed;
-    -color-base-4: #cbd2db;
-    -color-base-5: #9aa3b2;
-    -color-base-6: #6b7486;
-    -color-base-7: #475163;
-    -color-base-8: #2a3242;
-    -color-base-9: #121826;
+    -color-base-1: #f6f6f6;
+    -color-base-2: #ededed;
+    -color-base-3: #e4e4e4;
+    -color-base-4: #bdbdbd;
+    -color-base-5: #a3a3a3;
+    -color-base-6: #6b6b6b;
+    -color-base-7: #3a3a3a;
+    -color-base-8: #292929;
+    -color-base-9: #141414;
 
-    /* Superficies: tarjetas blancas sobre un fondo gris perla */
-    -color-bg-inset: #e9edf2;
+    /* Superficies: tarjetas blancas sobre un fondo gris de app */
+    -color-bg-inset: #ededed;
     -color-bg-default: #ffffff;
-    -color-bg-subtle: #f4f6f9;
+    -color-bg-subtle: #f6f6f6;
     -color-bg-overlay: #ffffff;
-    -color-border-default: #dde2e9;
-    -color-border-muted: #e8ecf1;
-    -color-border-subtle: #eef1f5;
-    -color-shadow-default: rgba(15, 23, 42, 0.12);
+    -color-border-default: #e2e2e2;
+    -color-border-muted: #e2e2e2;
+    -color-border-subtle: #ededed;
+    -color-shadow-default: rgba(20, 20, 20, 0.12);
 
-    -color-fg-default: #111827;
-    -color-fg-muted: #5b6474;
-    -color-fg-subtle: #8a93a3;
+    -color-fg-default: #1f1f1f;
+    -color-fg-muted: #6b6b6b;
+    -color-fg-subtle: #737373;
     -color-fg-emphasis: #ffffff;
 
-    -color-neutral-emphasis-plus: #475163;
-    -color-neutral-emphasis: #6b7486;
-    -color-neutral-muted: rgba(107, 116, 134, 0.22);
-    -color-neutral-subtle: rgba(107, 116, 134, 0.08);
+    -color-neutral-emphasis-plus: #3a3a3a;
+    -color-neutral-emphasis: #6b6b6b;
+    -color-neutral-muted: rgba(107, 107, 107, 0.22);
+    -color-neutral-subtle: rgba(107, 107, 107, 0.08);
 
-    /* Acento azul "Volt" (escala 0 = claro … 9 = oscuro) */
-    -color-accent-0: #e0f2fe;
-    -color-accent-1: #bae6fd;
-    -color-accent-2: #7dd3fc;
-    -color-accent-3: #38bdf8;
-    -color-accent-4: #0ea5e9;
-    -color-accent-5: #0284c7;
-    -color-accent-6: #0369a1;
-    -color-accent-7: #075985;
-    -color-accent-8: #0c4a6e;
-    -color-accent-9: #082f49;
-    /* Texto y enlaces sobre blanco: contraste AA */
-    -color-accent-fg: #0369a1;
-    /* Fondo que lleva texto blanco (menús, checks, toggles) */
-    -color-accent-emphasis: #0284c7;
-    -color-accent-muted: rgba(2, 132, 199, 0.35);
-    -color-accent-subtle: rgba(2, 132, 199, 0.08);
+    /* Acento verde (escala 0 = claro … 9 = oscuro) */
+    -color-accent-0: #ebfdf1;
+    -color-accent-1: #d2fadf;
+    -color-accent-2: #8ef3b2;
+    -color-accent-3: #3beb7c;
+    -color-accent-4: #3beb7c;
+    -color-accent-5: #22c863;
+    -color-accent-6: #1aa851;
+    -color-accent-7: #117a3a;
+    -color-accent-8: #0b5a2a;
+    -color-accent-9: #0b2e17;
+    /* Texto e iconos verdes sobre blanco: contraste 5.4:1 */
+    -color-accent-fg: #117a3a;
+    /* Fondo que lleva texto blanco (menús, checks, toggles): verde oscuro, el blanco no lee sobre #3beb7c */
+    -color-accent-emphasis: #117a3a;
+    -color-accent-muted: rgba(59, 235, 124, 0.45);
+    -color-accent-subtle: #ebfdf1;
 
-    -color-success-fg: #047857;
-    -color-success-emphasis: #059669;
-    -color-success-muted: rgba(5, 150, 105, 0.35);
-    -color-success-subtle: rgba(5, 150, 105, 0.08);
-    -color-warning-fg: #b45309;
-    -color-warning-emphasis: #d97706;
-    -color-warning-muted: rgba(217, 119, 6, 0.35);
-    -color-warning-subtle: rgba(217, 119, 6, 0.1);
-    -color-danger-fg: #b91c1c;
-    -color-danger-emphasis: #dc2626;
-    -color-danger-muted: rgba(220, 38, 38, 0.35);
-    -color-danger-subtle: rgba(220, 38, 38, 0.08);
+    -color-success-fg: #117a3a;
+    -color-success-emphasis: #117a3a;
+    -color-success-muted: rgba(17, 122, 58, 0.35);
+    -color-success-subtle: #ebfdf1;
+    -color-warning-fg: #b54708;
+    -color-warning-emphasis: #b54708;
+    -color-warning-muted: rgba(181, 71, 8, 0.35);
+    -color-warning-subtle: #fffaeb;
+    -color-danger-fg: #b42318;
+    -color-danger-emphasis: #b42318;
+    -color-danger-muted: rgba(180, 35, 24, 0.35);
+    -color-danger-subtle: #fef3f2;
 
     /* Marca */
-    -tunai-cta: linear-gradient(to right, #0284c7, #2563eb);
-    -tunai-cta-hover: linear-gradient(to right, #0ea5e9, #3b82f6);
-    -tunai-cta-fg: #ffffff;
-    /* Grafito metálico para títulos, a juego con el cromo del logo */
-    -tunai-chrome: linear-gradient(to bottom, #0f172a 0%, #334155 60%, #64748b 100%);
-    -tunai-glow: rgba(37, 99, 235, 0.28);
-    -tunai-stage: radial-gradient(center 50% 40%, radius 80%, #ffffff 0%, #eef1f5 55%, #d5dbe3 100%);
+    -tunai-cta: #3beb7c;
+    -tunai-cta-hover: #22c863;
+    -tunai-cta-fg: #0b2e17;
+    /* Título en tinta casi negra (antes un degradado metálico) */
+    -tunai-chrome: #1f1f1f;
+    -tunai-glow: rgba(59, 235, 124, 0.40);
+    -tunai-stage: radial-gradient(center 50% 40%, radius 80%, #ffffff 0%, #f6f6f6 60%, #ededed 100%);
+    -tunai-ink: #292929;
 
     /* Alias usados por las vistas */
     -tunai-primary: -color-accent-fg;
-    -tunai-bg: #f3f5f8;
+    -tunai-bg: #e4e4e4;
     -tunai-surface: -color-bg-default;
     -tunai-border: -color-border-default;
     -tunai-text: -color-fg-default;
@@ -96,7 +99,7 @@
     -tunai-highlight: -color-accent-subtle;
     -tunai-highlight-border: -color-accent-muted;
 
-    -fx-background-color: radial-gradient(center 50% -10%, radius 85%, #ffffff 0%, #f3f5f8 60%, #eceff4 100%);
+    -fx-background-color: #e4e4e4;
 }
 
 .root.popup {
@@ -112,7 +115,7 @@
 .app-name,
 .section-title,
 .display {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-weight: bold;
 }
 
@@ -245,16 +248,16 @@
 /* ============================================================ Estructura */
 .surface {
     -fx-background-color: -color-bg-default;
-    -fx-background-radius: 18;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-default;
-    -fx-border-radius: 18;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 40, 0.1, 0, 14);
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 40, 0.1, 0, 14);
 }
 
 .top-bar {
     -fx-background-color: rgba(255, 255, 255, 0.92);
     -fx-border-color: transparent transparent
-        linear-gradient(to right, -color-border-default, rgba(2, 132, 199, 0.55) 50%, -color-border-default) transparent;
+        linear-gradient(to right, -color-border-default, rgba(59, 235, 124, 0.55) 50%, -color-border-default) transparent;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 10 24 10 24;
     -fx-min-height: 64;
@@ -285,7 +288,7 @@
     -fx-background-color: -color-bg-default;
     -fx-border-color: transparent;
     -fx-padding: 10 16 10 18;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 18, 0.1, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 18, 0.1, 0, 4);
 }
 
 .page-title {
@@ -331,7 +334,7 @@
 }
 
 .flow-step > .step-num {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-weight: bold;
     -fx-font-size: 13px;
     -fx-min-width: 24;
@@ -380,7 +383,7 @@
     -fx-min-height: 72;
     -fx-max-width: 72;
     -fx-max-height: 72;
-    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #ffffff, #e0f2fe);
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #ffffff, #d2fadf);
     -fx-background-radius: 36;
     -fx-border-color: -color-accent-muted;
     -fx-border-radius: 36;
@@ -432,10 +435,10 @@
 
 .vehicle-card > .container {
     -fx-background-color: -color-bg-default;
-    -fx-background-radius: 16;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 16;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.08), 18, 0.1, 0, 6);
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 18, 0.1, 0, 6);
 }
 
 .vehicle-card:hover {
@@ -450,7 +453,7 @@
 
 /* El Tile de AtlantaFX usa la clase .title para el nombre: aquí va a tamaño de tarjeta */
 .vehicle-card .title {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-weight: bold;
     -fx-font-size: 18px;
     -fx-text-fill: -color-fg-default;
@@ -492,8 +495,8 @@
     -fx-border-color: -color-border-default;
     -fx-border-style: segments(10, 8);
     -fx-border-width: 1.5;
-    -fx-border-radius: 18;
-    -fx-background-radius: 18;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
 }
 
 .drop-zone:hover {
@@ -508,7 +511,7 @@
 }
 
 .drop-title {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-weight: bold;
     -fx-font-size: 22px;
     -fx-text-fill: -color-fg-default;
@@ -516,9 +519,9 @@
 
 .tips-panel {
     -fx-background-color: -color-bg-default;
-    -fx-background-radius: 16;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 16;
+    -fx-border-radius: 12;
     -fx-padding: 18 20 18 20;
 }
 
@@ -537,18 +540,18 @@
 
 .form-row {
     -fx-background-color: -color-bg-default;
-    -fx-background-radius: 14;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 14;
+    -fx-border-radius: 12;
     -fx-padding: 12 16 12 16;
 }
 
 /* ================================================================== Generando */
 .photo-frame {
     -fx-background-color: -tunai-stage;
-    -fx-background-radius: 14;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-default;
-    -fx-border-radius: 14;
+    -fx-border-radius: 12;
     -fx-padding: 10;
 }
 
@@ -588,7 +591,7 @@
 }
 
 .elapsed {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-weight: bold;
     -fx-font-size: 20px;
     -fx-text-fill: -color-fg-default;
@@ -607,9 +610,9 @@
 
 .panel-section {
     -fx-background-color: -color-bg-default;
-    -fx-background-radius: 14;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 14;
+    -fx-border-radius: 12;
     -fx-padding: 14;
     -fx-spacing: 10;
 }
@@ -648,7 +651,7 @@
     -fx-border-radius: 999;
     -fx-background-radius: 999;
     -fx-padding: 6 8 6 18;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.14), 24, 0.1, 0, 8);
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 24, 0.1, 0, 8);
 }
 
 .viewer-toolbar .hint {
@@ -675,7 +678,7 @@
 }
 
 .viewer-toolbar .toggle-button:selected {
-    -fx-background-color: -color-accent-muted, #e0f2fe;
+    -fx-background-color: -color-accent-muted, #ebfdf1;
     -fx-text-fill: -color-accent-fg;
 }
 
@@ -706,9 +709,9 @@
 
 .plan-card {
     -fx-background-color: -color-bg-default;
-    -fx-background-radius: 16;
+    -fx-background-radius: 12;
     -fx-border-color: -color-border-default;
-    -fx-border-radius: 16;
+    -fx-border-radius: 12;
     -fx-padding: 18;
 }
 
@@ -728,7 +731,7 @@
 }
 
 .plan-name {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -740,7 +743,7 @@
 }
 
 .plan-price {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-size: 30px;
     -fx-font-weight: bold;
     -fx-text-fill: -tunai-chrome;
@@ -766,13 +769,13 @@
 
 /* ================================================================== Acerca de */
 .about-hero {
-    -fx-background-color: linear-gradient(to right, #f0f9ff, #ffffff);
-    -fx-background-radius: 16;
+    -fx-background-color: linear-gradient(to right, #ebfdf1, #ffffff);
+    -fx-background-radius: 12;
     -fx-padding: 16 20 16 16;
 }
 
 .about-name {
-    -fx-font-family: "Rajdhani";
+    -fx-font-family: "Segoe UI";
     -fx-font-size: 32px;
     -fx-font-weight: bold;
     -fx-text-fill: -tunai-chrome;
@@ -842,4 +845,505 @@
     -fx-font-family: "Consolas", "monospace";
     -fx-font-size: 12px;
     -fx-text-fill: -color-fg-default;
+}
+
+/* ===================================================== Inicio de sesión (guía docs/guia_diseño_UI.jpg) */
+/* Fondo gris claro, tarjeta blanca de esquinas amplias, verde de acción y texto grafito. Solo tema claro. */
+.login-root {
+    -tunai-login-green: #3beb7c;
+    -tunai-login-green-hover: #22c863;
+    -tunai-login-green-pressed: #1aa851;
+    -tunai-login-ink: #0b2e17;
+    -fx-background-color: #e4e4e4;
+    -fx-padding: 24;
+}
+
+.login-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 28;
+    -fx-border-color: #e3e6ea;
+    -fx-border-radius: 28;
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 40, 0.05, 0, 16);
+}
+
+.login-brand {
+    -fx-font-family: "Segoe UI";
+    -fx-font-weight: bold;
+    -fx-font-size: 30px;
+    -fx-text-fill: -tunai-login-ink;
+}
+
+.login-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tunai-login-ink;
+}
+
+.login-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6f7681;
+}
+
+.login-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4a5059;
+}
+
+.text-field.login-field,
+.password-field.login-field {
+    -fx-background-color: #f6f7f9;
+    -fx-background-radius: 12;
+    -fx-border-color: #e3e6ea;
+    -fx-border-radius: 12;
+    -fx-padding: 12 44 12 14;
+    -fx-font-size: 14px;
+    -fx-text-fill: -tunai-login-ink;
+    -fx-prompt-text-fill: #9aa0a9;
+}
+
+.text-field.login-field:focused,
+.password-field.login-field:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: -tunai-login-green-pressed;
+    -fx-border-width: 1.5;
+    -fx-background-insets: 0;
+}
+
+.button.login-eye {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-effect: none;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+}
+
+.button.login-eye > .ikonli-font-icon {
+    -fx-icon-color: #6f7681;
+}
+
+.button.login-eye:hover > .ikonli-font-icon {
+    -fx-icon-color: -tunai-login-ink;
+}
+
+/* El texto va en grafito sobre el verde: el blanco no alcanza contraste suficiente. */
+.button.login-button {
+    -fx-background-color: -tunai-login-green;
+    -fx-background-radius: 12;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: -tunai-login-ink;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 13 20 13 20;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(59, 235, 124, 0.40), 14, 0.1, 0, 4);
+}
+
+.button.login-button:hover {
+    -fx-background-color: -tunai-login-green-hover;
+}
+
+.button.login-button:pressed {
+    -fx-background-color: -tunai-login-green-pressed;
+}
+
+.button.login-button:disabled {
+    -fx-opacity: 0.7;
+    -fx-effect: none;
+}
+
+.button.login-button:focused {
+    -fx-border-color: -tunai-login-ink;
+    -fx-border-radius: 12;
+    -fx-border-width: 1.5;
+    -fx-border-insets: -3;
+}
+
+.login-spinner {
+    -fx-progress-color: -tunai-login-ink;
+}
+
+.login-error {
+    -fx-background-color: rgba(220, 38, 38, 0.08);
+    -fx-background-radius: 12;
+    -fx-padding: 10 12 10 12;
+}
+
+.login-error > .label {
+    -fx-text-fill: #b91c1c;
+    -fx-font-size: 13px;
+}
+
+.login-error > .ikonli-font-icon {
+    -fx-icon-color: #b91c1c;
+}
+
+.login-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6f7681;
+}
+
+/* ===================================================== Nuevo diseño (skill desktop-app-ui-design) */
+/* Botones: esquinas de 12 y efecto de pulsación (escala 0.97). El texto sobre verde es siempre verde muy oscuro. */
+.button,
+.toggle-button,
+.menu-button {
+    -fx-background-radius: 12;
+}
+
+.button:pressed,
+.toggle-button:pressed {
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
+}
+
+.button.primary:hover,
+.button.accent:hover,
+.button:default:hover {
+    -fx-translate-y: -1;
+}
+
+/* Etiquetas de sección: caption gris, pequeña y en negrita */
+.section-title {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-fg-subtle;
+}
+
+/* Tarjetas planas: borde fino y sombra solo al pasar el ratón */
+.surface,
+.vehicle-card > .container {
+    -fx-effect: null;
+}
+
+.vehicle-card:hover {
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
+
+.vehicle-card:hover > .container {
+    -fx-border-color: -color-accent-3;
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 16, 0, 0, 2);
+}
+
+/* Barra superior y píldoras: carbón sobre blanco, sin degradados de color */
+.top-bar {
+    -fx-background-color: #ffffff;
+}
+
+/* Barra de progreso en verde sólido */
+.progress-bar > .bar {
+    -fx-background-color: #3beb7c;
+    -fx-background-radius: 999;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #ededed;
+    -fx-background-radius: 999;
+}
+
+/* Paso activo: texto oscuro sobre verde (antes blanco sobre azul) */
+.flow-step.active > .step-num {
+    -fx-effect: null;
+}
+
+/* ===================================================== Sidebar (único acento oscuro junto a tooltips y toasts) */
+.sidebar {
+    -fx-background-color: #292929;
+    -fx-background-radius: 16;
+    -fx-spacing: 6;
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.12), 24, 0, 0, 8);
+}
+
+.button.sidebar-item {
+    -color-button-bg: transparent;
+    -color-button-border: transparent;
+    -color-button-fg: #a3a3a3;
+    -color-button-bg-hover: #3a3a3a;
+    -color-button-border-hover: transparent;
+    -color-button-fg-hover: #ffffff;
+    -color-button-bg-focused: #292929;
+    -color-button-border-focused: #6b6b6b;
+    -color-button-fg-focused: #ffffff;
+    -color-button-bg-pressed: #3a3a3a;
+    -color-button-border-pressed: transparent;
+    -color-button-fg-pressed: #ffffff;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+    -fx-graphic-text-gap: 14;
+    -fx-padding: 0 14 0 14;
+    -fx-text-fill: #d4d4d4;
+    -fx-font-size: 14px;
+    -fx-background-radius: 12;
+    -fx-effect: none;
+}
+
+.button.sidebar-item > .ikonli-font-icon {
+    -fx-icon-color: #a3a3a3;
+    -fx-icon-size: 22px;
+}
+
+.button.sidebar-item:hover > .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+}
+
+.button.sidebar-item.active {
+    -color-button-bg: #3beb7c;
+    -color-button-bg-hover: #22c863;
+    -color-button-bg-focused: #3beb7c;
+    -color-button-bg-pressed: #22c863;
+    -color-button-border-focused: #0b2e17;
+    -fx-effect: dropshadow(gaussian, rgba(59, 235, 124, 0.40), 12, 0, 0, 2);
+}
+
+.button.sidebar-item.active > .ikonli-font-icon,
+.button.sidebar-item.active:hover > .ikonli-font-icon {
+    -fx-icon-color: #0b2e17;
+}
+
+.tooltip.sidebar-tooltip {
+    -fx-background-color: #292929;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 8;
+    -fx-font-size: 12px;
+}
+
+/* Lienzo blanco de la ventana (radio 24) junto al sidebar */
+.canvas {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 24;
+}
+
+/* ===================================================== Maquetación: KPIs, secciones y ajustes */
+.overline {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-subtle;
+}
+
+.kpi-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 12;
+    -fx-padding: 18 20 18 20;
+}
+
+.kpi-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.08), 16, 0, 0, 2);
+}
+
+.kpi-value {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.settings-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 12;
+}
+
+.settings-row {
+    -fx-padding: 16 20 16 20;
+}
+
+.settings-row:hover {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 12;
+}
+
+.divider {
+    -fx-min-height: 1;
+    -fx-max-height: 1;
+    -fx-background-color: -color-border-default;
+}
+
+.row-title {
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-fg-default;
+}
+
+.avatar {
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-max-width: 44;
+    -fx-max-height: 44;
+    -fx-background-color: #3beb7c;
+    -fx-background-radius: 22;
+}
+
+.avatar-initial {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0b2e17;
+}
+
+/* Sidebar expandido: etiquetas de grupo, marca y chip de usuario */
+.button.sidebar-item:hover {
+    -fx-text-fill: #ffffff;
+}
+
+.button.sidebar-item.active,
+.button.sidebar-item.active:hover {
+    -fx-text-fill: #0b2e17;
+    -fx-font-weight: bold;
+}
+
+.sidebar-brand {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.sidebar-group {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #a3a3a3;
+    -fx-padding: 10 0 2 14;
+}
+
+.sidebar-user-chip {
+    -fx-padding: 8 0 0 0;
+    -fx-cursor: hand;
+    -fx-border-color: #3a3a3a transparent transparent transparent;
+}
+
+.sidebar-user {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.avatar.avatar-small {
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-max-width: 36;
+    -fx-max-height: 36;
+    -fx-background-radius: 18;
+}
+
+/* ===================================================== Paleta de comandos (Ctrl+K) */
+.palette-scrim {
+    -fx-background-color: rgba(20, 20, 20, 0.35);
+}
+
+.palette-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(20, 20, 20, 0.24), 48, 0, 0, 24);
+}
+
+.palette-top {
+    -fx-padding: 14 18 14 18;
+    -fx-border-color: transparent transparent -color-border-default transparent;
+}
+
+.palette-top > .ikonli-font-icon {
+    -fx-icon-color: -color-fg-subtle;
+    -fx-icon-size: 20px;
+}
+
+.text-field.palette-field,
+.text-field.palette-field:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-font-size: 16px;
+}
+
+.list-view.palette-list {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 6;
+}
+
+.list-view.palette-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-padding: 0 12 0 12;
+    -fx-text-fill: -color-fg-default;
+}
+
+.list-view.palette-list .list-cell:filled:selected,
+.list-view.palette-list .list-cell:filled:selected:focused {
+    -fx-background-color: #ebfdf1;
+}
+
+.list-view.palette-list .list-cell:filled:selected .palette-title {
+    -fx-font-weight: bold;
+}
+
+.list-view.palette-list .list-cell:filled:selected > .ikonli-font-icon,
+.list-view.palette-list .list-cell:filled:selected .ikonli-font-icon {
+    -fx-icon-color: #117a3a;
+}
+
+.list-view.palette-list .list-cell:filled:hover {
+    -fx-background-color: -color-bg-subtle;
+}
+
+.palette-title {
+    -fx-font-size: 14px;
+}
+
+.palette-hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-fg-subtle;
+}
+
+.palette-footer {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-fg-subtle;
+    -fx-padding: 10 18 12 18;
+    -fx-border-color: -color-border-default transparent transparent transparent;
+}
+
+/* ===================================================== Estados de carga y avisos */
+.skeleton {
+    -fx-background-color: #ededed;
+    -fx-background-radius: 8;
+}
+
+.skeleton-line {
+    -fx-background-radius: 999;
+}
+
+.skeleton-thumb {
+    -fx-background-color: #ededed;
+    -fx-background-radius: 12;
+}
+
+.banner {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 12 16 12 16;
+}
+
+.banner-info {
+    -fx-background-color: #f6f6f6;
+    -fx-border-color: -color-border-default;
+}
+
+.banner-warning {
+    -fx-background-color: #fffaeb;
+    -fx-border-color: rgba(181, 71, 8, 0.35);
+}
+
+.banner-warning > .ikonli-font-icon {
+    -fx-icon-color: #b54708;
+}
+
+.banner-warning > .label {
+    -fx-text-fill: #7a2e0e;
+}
+
+.banner .skeleton {
+    -fx-background-color: #d9d9d9;
 }
