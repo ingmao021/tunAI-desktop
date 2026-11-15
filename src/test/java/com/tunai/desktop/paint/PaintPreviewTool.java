@@ -28,8 +28,10 @@ public final class PaintPreviewTool {
         long start = System.nanoTime();
         boolean[] coverage = UvCoverage.compute(model.texCoords(), model.indices(), model.normals(), w, h);
         PaintMaskStrategy strategy = new BodyPaintMaskStrategy();
-        float[] mask = strategy.computeMask(px, w, h, coverage);
-        int[] recolored = new Recolorer(px, mask).apply(target, 0.85);
+        float[] colorMask = strategy.computeMask(px, w, h, coverage);
+        float[] mask = PaintMaskRefiner.refine(colorMask, coverage, w, h,
+                model.points(), model.texCoords(), model.indices());
+        int[] recolored = new Recolorer(px, mask).apply(target, 1.0);
         long ms = (System.nanoTime() - start) / 1_000_000;
 
         int covered = 0;

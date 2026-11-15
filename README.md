@@ -111,7 +111,7 @@ En GitHub, [`ci.yml`](.github/workflows/ci.yml) corre `mvnw verify` (con las pru
 - **Dos plazos en la generación:** 120 s para que el servidor empiece a responder y 300 s en total con la descarga del modelo, para no perder por una descarga lenta un modelo que ya se generó.
 - **El modelo se guarda en el garaje en cuanto llega**, antes de abrir el visor: cada generación cuesta créditos y no debe perderse si la app se cierra.
 - **Validación del GLB (§3):** se exige 1 malla, 1 primitiva, 1 material con textura de color base y ninguna extensión obligatoria. Si el GLB trae otras texturas (por ejemplo un mapa de normales), se ignoran en lugar de rechazar el modelo.
-- **Recoloreado:** la máscara de pintura (`PaintMaskStrategy`) solo considera los píxeles que usa el modelo (islas UV) y busca el color dominante. Hay que ajustarla con el GLB del ensayo real.
+- **Recoloreado:** la máscara de pintura (`PaintMaskStrategy`) solo considera los píxeles que usa el modelo (islas UV) y decide por color. Como el color solo no distingue la carrocería de un rin cromado, `PaintMaskRefiner` la corrige con la geometría: `PaintIslandFilter` descarta la pintura de las islas de malla pequeñas y desconectadas del cuerpo (rines, interior) y `MaskFeather` suaviza los bordes. `Recolorer` trabaja en luminosidad L\* de Lab con el color elegido escalado en luz lineal, y calibra la ganancia para que el color medio de la pintura sea el elegido (ΔE ≈ 1 en la paleta, medido con modelos reales de Tripo). Límite conocido: el cromo unido a la carrocería (parachoques, molduras) forma parte de la misma isla y se sigue pintando.
 - **Exportar GLB** reemplaza la imagen de color base reescribiendo los chunks del GLB (JglTF reescribe la imagen desde el `bufferView` original y no permitía reemplazarla de forma fiable).
 - **Clasificador:** MobileNetV2 (ONNX Model Zoo); las fotos se redimensionan directamente a 224×224, como pide el documento (sin recorte central), para no cortar el carro.
 
@@ -124,7 +124,7 @@ En GitHub, [`ci.yml`](.github/workflows/ci.yml) corre `mvnw verify` (con las pru
 | Licencia de los pesos de MobileNetV2 | PENDIENTE DE VALIDAR (el Model Zoo indica Apache-2.0) |
 | Rines | PENDIENTE (PRD frontend §17); no implementado |
 | Logo, colores de marca y tipografía | Rediseño aplicado (icono, Rajdhani, tokens en `styles/app.css`); falta la validación final de marca |
-| Ajuste de la máscara de pintura y del visor con un GLB real de Tripo | Tras la primera generación pagada (la máscara está ajustada con SF3D) |
+| Ajuste del visor con un GLB real de Tripo | La máscara de pintura ya se ajustó con modelos reales de Tripo; el visor (Phong de JavaFX) ignora metálico, rugosidad y normales del GLB, por lo que la pintura se ve más mate que en un visor PBR (el GLB exportado sí conserva esos mapas) |
 | Calibración con fotos propias del equipo | Antes del ensayo |
 | Firma de los instaladores | Sin firmar: Windows SmartScreen y macOS Gatekeeper avisan la primera vez. Requiere certificado de firma de código (Windows) y cuenta de Apple Developer (macOS) |
 | macOS Intel | El `.dmg` es solo para Apple Silicon |

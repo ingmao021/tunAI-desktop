@@ -46,7 +46,11 @@ public final class UvCoverage {
         return len > 1e-9 && y / len > DOWN_THRESHOLD;
     }
 
-    static final double DOWN_THRESHOLD = 0.5;
+    /**
+     * Solo se descartan los triángulos que miran casi de lleno hacia abajo (el piso). Con 0,5 también se perdían
+     * zócalos y mentones de parachoques, que en modelos con textura real sí son pintura y quedaban grises.
+     */
+    static final double DOWN_THRESHOLD = 0.85;
 
     private static double wrap(float v) {
         return v >= 0 && v <= 1 ? v : v - Math.floor(v);

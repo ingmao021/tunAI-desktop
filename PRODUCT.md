@@ -40,7 +40,7 @@ De una sola foto a un modelo 3D recoloreable, **sin cuentas, sin login y sin sub
 - Clasificador local MobileNetV2 (ONNX) verifica que la foto sea un vehículo; redimensiona directo a 224×224 (sin recorte central). Salidas de emergencia para la demo vía `settings.json` (`classifier.enabled`, `classifier.threshold`), no visibles en la UI.
 - Sin cuentas ni login: cada instalación se identifica con un UUID v4 local.
 - Exportar GLB reescribe los chunks del archivo (JglTF no permitía reemplazar la imagen de forma fiable).
-- La máscara de pintura está ajustada con SF3D; **pendiente** ajustarla con un GLB real de Tripo tras la primera generación pagada.
+- La máscara de pintura se ajustó con modelos reales de Tripo: el color decide y la geometría (islas de malla) excluye rines y piezas sueltas. El cromo unido a la carrocería (parachoques) sigue pintándose. El visor no muestra metálico/rugosidad/normales del GLB (Phong de JavaFX).
 - Stack fijado por el handoff: Java 21 + Maven (wrapper incluido), OpenJFX 21 LTS, FXML + CSS, JglTF, `java.net.http`, Jackson, JUnit 5 + TestFX. Prohibido: WebView con WebGL, jMonkeyEngine, LWJGL.
 - Terminología del producto: **garaje**, **vehículo**, **generación**, **créditos / cuota**, **visor**.
 

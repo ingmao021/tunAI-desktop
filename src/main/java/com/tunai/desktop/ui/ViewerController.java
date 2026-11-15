@@ -7,6 +7,7 @@ import com.tunai.desktop.garage.GarageVehicle;
 import com.tunai.desktop.garage.VehicleMetadata;
 import com.tunai.desktop.image.FxImages;
 import com.tunai.desktop.paint.BodyPaintMaskStrategy;
+import com.tunai.desktop.paint.PaintMaskRefiner;
 import com.tunai.desktop.paint.PaintMaskStrategy;
 import com.tunai.desktop.paint.Recolorer;
 import com.tunai.desktop.paint.UvCoverage;
@@ -53,7 +54,7 @@ public class ViewerController implements NavigationAware {
             {"Rojo", "#C62828"}, {"Azul", "#1565C0"}, {"Negro", "#212121"}, {"Blanco", "#F5F5F5"},
             {"Plata", "#B0B3B8"}, {"Verde", "#2E7D32"}, {"Amarillo", "#F9A825"}, {"Naranja", "#EF6C00"},
     };
-    static final double DEFAULT_INTENSITY = 0.85;
+    static final double DEFAULT_INTENSITY = 1.0;
 
     private final AppContext context;
     private final PaintMaskStrategy maskStrategy = new BodyPaintMaskStrategy();
@@ -244,7 +245,10 @@ public class ViewerController implements NavigationAware {
         int h = (int) original.getHeight();
         int[] pixels = FxImages.argb(original);
         boolean[] coverage = UvCoverage.compute(model.texCoords(), model.indices(), model.normals(), w, h);
-        float[] mask = maskStrategy.computeMask(pixels, w, h, coverage);
+        float[] colorMask = maskStrategy.computeMask(pixels, w, h, coverage);
+        // El color solo no distingue la carrocería de los rines cromados: la geometría los separa y se suavizan los bordes.
+        float[] mask = PaintMaskRefiner.refine(colorMask, coverage, w, h,
+                model.points(), model.texCoords(), model.indices());
         Recolorer prepared = new Recolorer(pixels, mask);
         Platform.runLater(() -> {
             recolorer = prepared;

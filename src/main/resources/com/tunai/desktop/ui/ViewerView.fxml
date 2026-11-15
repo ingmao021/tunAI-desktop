@@ -81,7 +81,7 @@
                 </HBox>
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label text="Intensidad"/>
-                    <Slider fx:id="intensitySlider" min="0" max="1" value="0.85" HBox.hgrow="ALWAYS"/>
+                    <Slider fx:id="intensitySlider" min="0" max="1" value="1.0" HBox.hgrow="ALWAYS"/>
                 </HBox>
                 <HBox spacing="8" alignment="CENTER_LEFT">
                     <Button fx:id="restoreButton" text="Restaurar original" onAction="#onRestore">
