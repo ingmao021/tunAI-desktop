@@ -51,8 +51,6 @@ final class SidebarShell extends StackPane {
     private final VBox sidebar = new VBox(6);
     private final Button toggle = new Button();
     private final Label brand = new Label("TunAI");
-    private final Label userName = new Label();
-    private final HBox userChip = new HBox(10);
     private final BorderPane frame = new BorderPane();
     private final CommandPalette palette = new CommandPalette(this::commands);
     /** Etiquetas visibles: sigue a la animación (aparecen al abrir, se ocultan al terminar de cerrar). */
@@ -87,11 +85,9 @@ final class SidebarShell extends StackPane {
         Region grow = new Region();
         VBox.setVgrow(grow, Priority.ALWAYS);
         sidebar.getChildren().add(grow);
-        sidebar.getChildren().add(group("Cuenta"));
+        sidebar.getChildren().add(group("Aplicación"));
         sidebar.getChildren().add(screenItem(Navigator.Screen.SETTINGS, "mdmz-settings", "Ajustes"));
         sidebar.getChildren().add(item("mdal-help_outline", "Acerca de TunAI", () -> AboutDialog.show(context)));
-        sidebar.getChildren().add(item("mdal-exit_to_app", "Cerrar sesión", context::signOut));
-        buildUserChip();
 
         BorderPane.setMargin(sidebar, new Insets(12, 0, 12, 12));
         frame.setLeft(sidebar);
@@ -132,23 +128,6 @@ final class SidebarShell extends StackPane {
         HBox header = new HBox(10, toggle, brand);
         header.setAlignment(Pos.CENTER_LEFT);
         sidebar.getChildren().add(header);
-    }
-
-    private void buildUserChip() {
-        String name = context.username() != null ? context.username() : "Sin sesión";
-        Label initial = new Label(name.substring(0, 1).toUpperCase());
-        initial.getStyleClass().add("avatar-initial");
-        StackPane avatar = new StackPane(initial);
-        avatar.getStyleClass().addAll("avatar", "avatar-small");
-        userName.setText(name);
-        userName.getStyleClass().add("sidebar-user");
-        userChip.getChildren().addAll(avatar, userName);
-        userChip.getStyleClass().add("sidebar-user-chip");
-        userChip.setOnMouseClicked(e -> context.navigator().goTo(Navigator.Screen.SETTINGS));
-        Tooltip tip = new Tooltip(name + " · Ajustes");
-        tip.getStyleClass().add("sidebar-tooltip");
-        Tooltip.install(userChip, tip);
-        sidebar.getChildren().add(userChip);
     }
 
     private Label group(String text) {
@@ -220,11 +199,8 @@ final class SidebarShell extends StackPane {
         }
         brand.setVisible(textShown);
         brand.setManaged(textShown);
-        userName.setVisible(textShown);
-        userName.setManaged(textShown);
         sidebar.setAlignment(textShown ? Pos.TOP_LEFT : Pos.TOP_CENTER);
         sidebar.setPadding(textShown ? new Insets(16, 14, 16, 14) : new Insets(16, 0, 16, 0));
-        userChip.setAlignment(textShown ? Pos.CENTER_LEFT : Pos.CENTER);
         ((HBox) toggle.getParent()).setAlignment(textShown ? Pos.CENTER_LEFT : Pos.CENTER);
     }
 
@@ -243,9 +219,7 @@ final class SidebarShell extends StackPane {
                 new CommandPalette.Command("Acción", "Expandir o contraer el menú", "mdmz-menu", "Ctrl+B",
                         this::toggle),
                 new CommandPalette.Command("Acción", "Acerca de TunAI", "mdal-help_outline", "Acción",
-                        () -> AboutDialog.show(context)),
-                new CommandPalette.Command("Acción", "Cerrar sesión", "mdal-exit_to_app", "Acción",
-                        context::signOut)));
+                        () -> AboutDialog.show(context))));
         for (var vehicle : context.garage().list()) {
             list.add(new CommandPalette.Command("Vehículo", vehicle.name(), "mdal-directions_car", "Vehículo",
                     () -> context.navigator().<ViewerController>goTo(Navigator.Screen.VIEWER, c -> c.open(vehicle))));
@@ -275,7 +249,7 @@ final class SidebarShell extends StackPane {
         PricingDialog.show(context.stage(), context.session().getCreditsPerModel());
     }
 
-    /** Pantallas que se muestran dentro del marco; login y consentimiento ocupan toda la ventana. */
+    /** Pantallas que se muestran dentro del marco; el consentimiento ocupa toda la ventana. */
     static boolean wraps(Navigator.Screen screen) {
         return screen == Navigator.Screen.GARAGE
                 || screen == Navigator.Screen.NEW_VEHICLE

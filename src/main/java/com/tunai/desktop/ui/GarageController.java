@@ -61,8 +61,6 @@ public class GarageController implements NavigationAware {
     private final Tooltip newVehicleTooltip = new Tooltip();
 
     @FXML
-    private MenuItem signOutItem;
-    @FXML
     private Label serverStatusLabel;
     @FXML
     private Label quotaLabel;
@@ -99,8 +97,6 @@ public class GarageController implements NavigationAware {
                 Kpi.card("Vehículos", kpiVehicles, new Label("guardados en tu garaje")),
                 Kpi.card("Créditos", kpiCredits, new Label("disponibles")),
                 Kpi.card("Modelos", kpiModels, new Label("que puedes generar")));
-        String username = context.username();
-        signOutItem.setText(username != null ? "Cerrar sesión (" + username + ")" : "Cerrar sesión");
         context.session().serverStatusProperty().addListener(statusListener);
         context.session().quotaProperty().addListener(statusListener);
         context.session().creditsProperty().addListener(statusListener);
@@ -403,8 +399,4 @@ public class GarageController implements NavigationAware {
         AboutDialog.show(context);
     }
 
-    @FXML
-    private void onSignOut() {
-        context.signOut();
-    }
 }

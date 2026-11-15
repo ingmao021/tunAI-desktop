@@ -45,7 +45,7 @@ Cada instalador incluye Java (no hace falta instalarlo) y se arma con `jpackage`
 Corre las pruebas en local (`.\mvnw.cmd verify`) y crea un tag:
 
 ```powershell
-git tag v1.0.1; git push origin v1.0.1
+git tag v1.0.2; git push origin v1.0.2
 ```
 
 El workflow [`release.yml`](.github/workflows/release.yml) arma `TunAI-<versión>.exe`, `TunAI-<versión>.dmg` (Apple Silicon, sin firmar) y `tunai_<versión>_amd64.deb`, y los publica en **Releases**. La versión sale del tag (`v1.0.1` → `1.0.1`, solo números). Si cambia el workflow en `develop`, arma los instaladores como artefactos sin publicar.

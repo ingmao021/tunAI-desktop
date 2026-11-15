@@ -57,7 +57,7 @@ public class App extends Application {
         // Calentamiento: despierta el backend de inmediato; el garaje funciona mientras tanto.
         context.serverMonitor().start();
         context.background().execute(context.classifier()::load);
-        navigator.goTo(context.hasValidSession() ? Navigator.afterLogin(context.settings().get()) : Navigator.Screen.LOGIN);
+        navigator.goTo(Navigator.firstScreen(context.settings().get()));
         stage.show();
     }
 

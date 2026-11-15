@@ -51,8 +51,8 @@ class SettingsUiTest extends FxRobot {
     }
 
     @Test
-    void showsTheAccountAndTheCreditBalance() {
-        assertTrue(lookup("demo").tryQuery().isPresent(), "Nombre de la cuenta");
+    void showsTheCreditBalanceAndNoAccountSection() {
+        assertTrue(lookup("Cuenta").tryQuery().isEmpty(), "Sin cuentas ni inicio de sesión");
         Label balance = lookup(".kpi-value").queryAllAs(Label.class).iterator().next();
         assertEquals(String.valueOf(app.context().session().getCredits()), balance.getText());
         assertTrue(lookup("Ver planes").tryQuery().isPresent());
@@ -80,13 +80,4 @@ class SettingsUiTest extends FxRobot {
         assertFalse(json.contains("consentAcceptedAt\":\"20"), "El consentimiento revocado no queda guardado: " + json);
     }
 
-    @Test
-    void signOutButtonReturnsToTheLogin() throws Exception {
-        Button signOut = lookup(".settings-card .button").queryAllAs(Button.class).stream()
-                .filter(b -> "Cerrar sesión".equals(b.getText())).findFirst().orElseThrow();
-        fx(signOut::fire);
-        WaitForAsyncUtils.waitFor(5, TimeUnit.SECONDS,
-                () -> app.context().navigator().currentController() instanceof LoginController);
-        assertFalse(app.context().hasValidSession());
-    }
 }

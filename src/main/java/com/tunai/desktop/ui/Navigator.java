@@ -16,7 +16,6 @@ import java.util.function.Consumer;
 public class Navigator {
 
     public enum Screen {
-        LOGIN("LoginView.fxml"),
         CONSENT("ConsentView.fxml"),
         GARAGE("GarageView.fxml"),
         NEW_VEHICLE("NewVehicleView.fxml"),
@@ -31,8 +30,8 @@ public class Navigator {
         }
     }
 
-    /** Primera pantalla con sesión válida: el consentimiento si aún no lo aceptó, si no el garaje. */
-    public static Screen afterLogin(com.tunai.desktop.config.Settings settings) {
+    /** Primera pantalla al abrir la app: el consentimiento si aún no lo aceptó, si no el garaje. */
+    public static Screen firstScreen(com.tunai.desktop.config.Settings settings) {
         return settings.hasConsent() ? Screen.GARAGE : Screen.CONSENT;
     }
 

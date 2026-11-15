@@ -11,7 +11,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 import java.util.logging.Logger;
 
 /**
@@ -32,9 +31,6 @@ public class ServerMonitor {
         t.setDaemon(true);
         return t;
     });
-    private volatile BooleanSupplier signedIn = () -> true;
-    private volatile Runnable sessionRejected = () -> {
-    };
     private ScheduledFuture<?> next;
     private volatile Boolean lastUp;
 
@@ -98,26 +94,11 @@ public class ServerMonitor {
         schedule(up ? READY_RECHECK_SECONDS : RETRY_SECONDS);
     }
 
-    /** Quién pide la cuota: sin sesión no se consulta (el backend la liga a la cuenta). */
-    public void whenSignedIn(BooleanSupplier signedIn) {
-        this.signedIn = signedIn;
-    }
-
-    /** Qué hacer si el backend rechaza el token (caducó): se llama en el hilo de JavaFX. */
-    public void onSessionRejected(Runnable action) {
-        this.sessionRejected = action;
-    }
-
     private void fetchQuota() {
-        if (!signedIn.getAsBoolean()) {
-            return;
-        }
         try {
             updateQuota(api.quota());
         } catch (ApiException e) {
-            if (e.code() == ErrorCode.UNAUTHORIZED) {
-                Platform.runLater(sessionRejected);
-            } else if (e.code() == ErrorCode.INVALID_INSTALLATION_ID) {
+            if (e.code() == ErrorCode.INVALID_INSTALLATION_ID) {
                 installationId.regenerate();
             } else {
                 LOG.info("No se pudo leer la cuota: " + e.getMessage());

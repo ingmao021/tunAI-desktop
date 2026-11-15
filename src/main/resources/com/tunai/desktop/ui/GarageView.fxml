@@ -86,11 +86,6 @@
                         <FontIcon iconLiteral="mdal-info"/>
                     </graphic>
                 </MenuItem>
-                <MenuItem fx:id="signOutItem" text="Cerrar sesión" onAction="#onSignOut">
-                    <graphic>
-                        <FontIcon iconLiteral="mdal-exit_to_app"/>
-                    </graphic>
-                </MenuItem>
             </items>
         </MenuButton>
     </HBox>

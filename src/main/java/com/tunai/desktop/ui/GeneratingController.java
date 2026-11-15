@@ -271,7 +271,6 @@ public class GeneratingController implements NavigationAware {
                 context.installationId().regenerate();
                 goToGarage();
             }
-            case SIGN_OUT -> context.signOut();
             case STAY, BACK_TO_GARAGE, SHOW_PLANS -> goToGarage();
         }
     }

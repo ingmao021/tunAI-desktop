@@ -15,7 +15,7 @@
         </padding>
         <VBox spacing="0">
             <Label text="Ajustes" styleClass="title-1, page-title"/>
-            <Label text="Tu cuenta, tus créditos y los datos de este equipo" styleClass="text-muted"/>
+            <Label text="Tus créditos y los datos de este equipo" styleClass="text-muted"/>
         </VBox>
     </VBox>
 </ScrollPane>

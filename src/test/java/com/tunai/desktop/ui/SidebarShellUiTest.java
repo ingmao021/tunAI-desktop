@@ -65,7 +65,6 @@ class SidebarShellUiTest extends FxRobot {
         assertTrue(SidebarShell.wraps(Navigator.Screen.GENERATING));
         assertTrue(SidebarShell.wraps(Navigator.Screen.VIEWER));
         assertTrue(SidebarShell.wraps(Navigator.Screen.SETTINGS));
-        assertFalse(SidebarShell.wraps(Navigator.Screen.LOGIN));
         assertFalse(SidebarShell.wraps(Navigator.Screen.CONSENT));
     }
 

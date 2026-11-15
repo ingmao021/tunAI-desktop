@@ -3,13 +3,10 @@ package com.tunai.desktop.ui;
 import atlantafx.base.controls.ToggleSwitch;
 import com.tunai.desktop.App;
 import com.tunai.desktop.AppContext;
-import com.tunai.desktop.config.Settings;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -18,18 +15,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Ajustes de usuario: cuenta, créditos, privacidad, servidor, datos locales y versión. */
+/** Ajustes de usuario: créditos, privacidad, servidor, datos locales y versión. */
 public class SettingsController implements NavigationAware {
 
     private static final Logger LOG = Logger.getLogger(SettingsController.class.getName());
-    private static final DateTimeFormatter DATE = DateTimeFormatter
-            .ofPattern("d 'de' MMMM, HH:mm", Locale.forLanguageTag("es-CO")).withZone(ZoneId.systemDefault());
 
     private final AppContext context;
     private final Label creditsValue = new Label();
@@ -46,7 +38,7 @@ public class SettingsController implements NavigationAware {
 
     @FXML
     private void initialize() {
-        page.getChildren().addAll(account(), credits(), privacy(), server(), data(), about());
+        page.getChildren().addAll(credits(), privacy(), server(), data(), about());
         context.session().serverStatusProperty().addListener(listener);
         context.session().creditsProperty().addListener(listener);
         context.session().creditsPerModelProperty().addListener(listener);
@@ -66,31 +58,6 @@ public class SettingsController implements NavigationAware {
         creditsValue.setText(String.valueOf(credits));
         modelsValue.setText(String.valueOf(Credits.models(credits, perModel)));
         StatusIndicator.apply(serverStatus, context.session().getServerStatus());
-    }
-
-    private VBox account() {
-        String username = context.username() != null ? context.username() : "Sin sesión";
-        Label initial = new Label(username.substring(0, 1).toUpperCase());
-        initial.getStyleClass().add("avatar-initial");
-        StackPane avatar = new StackPane(initial);
-        avatar.getStyleClass().add("avatar");
-
-        Settings.Session s = context.settings().get().session;
-        String until = s != null && s.expiresAt != null ? "Sesión activa hasta " + DATE.format(s.expiresAt) : "";
-        Label name = new Label(username);
-        name.getStyleClass().add("row-title");
-        Label detail = new Label(until);
-        detail.getStyleClass().addAll("muted", "small");
-        VBox text = new VBox(2, name, detail);
-        Button signOut = new Button("Cerrar sesión", new FontIcon("mdal-exit_to_app"));
-        signOut.setOnAction(e -> context.signOut());
-        HBox identity = new HBox(14, avatar, text);
-        identity.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(identity, javafx.scene.layout.Priority.ALWAYS);
-        HBox row = new HBox(16, identity, signOut);
-        row.getStyleClass().add("settings-row");
-        row.setAlignment(Pos.CENTER_LEFT);
-        return Kpi.section("Cuenta", row);
     }
 
     private VBox credits() {

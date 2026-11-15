@@ -74,4 +74,22 @@ class LocalDataTest {
         Files.writeString(file, "{roto");
         assertFalse(new SettingsStore(file).get().hasConsent());
     }
+
+    /** Una compilación con inicio de sesión guardó {@code account} y {@code session}: ya no existen y se ignoran. */
+    @Test
+    void settingsSavedByABuildWithLoginAreStillRead() throws Exception {
+        Path file = new AppPaths(home).settingsFile();
+        Files.createDirectories(home);
+        Files.writeString(file, "{\"account\":\"demo\",\"credits\":30,\"consentAcceptedAt\":\"2026-01-01T00:00:00Z\","
+                + "\"session\":{\"username\":\"demo\",\"token\":\"t\",\"expiresAt\":\"2099-01-01T00:00:00Z\"}}");
+
+        SettingsStore store = new SettingsStore(file);
+
+        assertTrue(store.get().hasConsent());
+        assertEquals(30, store.get().credits);
+        store.save();
+        String saved = Files.readString(file);
+        assertFalse(saved.contains("session"), "La sesión vieja no se vuelve a guardar: " + saved);
+        assertFalse(saved.contains("token"), "El token viejo no se vuelve a guardar: " + saved);
+    }
 }
