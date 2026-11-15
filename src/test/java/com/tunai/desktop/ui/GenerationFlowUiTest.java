@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +52,8 @@ class GenerationFlowUiTest extends FxRobot {
     private HttpServer server;
     private final AtomicInteger generationCalls = new AtomicInteger();
     private final AtomicReference<String> generationMode = new AtomicReference<>("ok");
+    /** Valor del header de retoma en cada petición de generación, en orden ("null" si no venía). */
+    private final List<String> resumeHeaders = new CopyOnWriteArrayList<>();
     /** Modelos que le quedan a la instalación en el backend simulado: 45 créditos a 15 por modelo. */
     private final AtomicInteger remaining = new AtomicInteger(3);
     private final AtomicInteger credits = new AtomicInteger(45);
@@ -80,6 +83,7 @@ class GenerationFlowUiTest extends FxRobot {
         server.createContext("/api/v1/generations", ex -> {
             ex.getRequestBody().readAllBytes();
             generationCalls.incrementAndGet();
+            resumeHeaders.add(String.valueOf(ex.getRequestHeaders().getFirst("X-Generation-Resume")));
             if (generationMode.get().equals("ok")) {
                 int left = remaining.decrementAndGet();
                 ex.getResponseHeaders().add("Content-Type", "model/gltf-binary");
@@ -90,6 +94,40 @@ class GenerationFlowUiTest extends FxRobot {
                 ex.getResponseHeaders().add("X-Credits-Per-Model", "15");
                 ex.sendResponseHeaders(200, glb.length);
                 ex.getResponseBody().write(glb);
+            } else if (generationMode.get().equals("timeout-resumable")
+                    || generationMode.get().equals("timeout-plain")) {
+                // Primer intento: 504. Si el modo es retomable y es el primer intento, el segundo entrega el modelo
+                boolean resumable = generationMode.get().equals("timeout-resumable");
+                if (resumable && generationCalls.get() >= 2) {
+                    int left = remaining.decrementAndGet();
+                    ex.getResponseHeaders().add("Content-Type", "model/gltf-binary");
+                    ex.getResponseHeaders().add("X-Quota-Limit", "3");
+                    ex.getResponseHeaders().add("X-Quota-Remaining", String.valueOf(left));
+                    ex.getResponseHeaders().add("X-Credits-Balance", String.valueOf(credits.addAndGet(-15)));
+                    ex.getResponseHeaders().add("X-Credits-Per-Model", "15");
+                    ex.sendResponseHeaders(200, glb.length);
+                    ex.getResponseBody().write(glb);
+                } else {
+                    byte[] body = ("{\"status\":504,\"code\":\"PROVIDER_TIMEOUT\",\"traceId\":\"to1\""
+                            + (resumable ? ",\"resumable\":true" : "") + "}").getBytes(StandardCharsets.UTF_8);
+                    ex.getResponseHeaders().add("Content-Type", "application/problem+json");
+                    ex.getResponseHeaders().add("Retry-After", "3");
+                    ex.sendResponseHeaders(504, body.length);
+                    ex.getResponseBody().write(body);
+                }
+            } else if (generationMode.get().equals("timeout-then-lost")) {
+                // El servidor se reinició entre el 504 y la retoma: ya no tiene la generación y no crea otra
+                boolean first = generationCalls.get() == 1;
+                byte[] body = (first
+                        ? "{\"status\":504,\"code\":\"PROVIDER_TIMEOUT\",\"traceId\":\"to2\",\"resumable\":true}"
+                        : "{\"status\":502,\"code\":\"PROVIDER_ERROR\",\"traceId\":\"lost1\"}")
+                        .getBytes(StandardCharsets.UTF_8);
+                ex.getResponseHeaders().add("Content-Type", "application/problem+json");
+                if (first) {
+                    ex.getResponseHeaders().add("Retry-After", "3");
+                }
+                ex.sendResponseHeaders(first ? 504 : 502, body.length);
+                ex.getResponseBody().write(body);
             } else if (generationMode.get().equals("no-credits")) {
                 byte[] body = "{\"status\":402,\"code\":\"INSUFFICIENT_CREDITS\",\"traceId\":\"def456\"}"
                         .getBytes(StandardCharsets.UTF_8);
@@ -238,6 +276,93 @@ class GenerationFlowUiTest extends FxRobot {
         waitFor(() -> lookup("Mi garaje").tryQuery().isPresent());
         assertEquals(1, generationCalls.get());
         assertTrue(context().garage().list().isEmpty());
+    }
+
+    /**
+     * Causa del gasto repetido: un 504 mostraba un error y el usuario reintentaba mientras el modelo se generaba. Si el
+     * servidor lo declara retomable, la app espera y retoma sola con la misma foto, sin mostrar error.
+     */
+    @Test
+    void aResumableTimeoutIsResumedAutomaticallyWithoutShowingAnError() throws Exception {
+        generationMode.set("timeout-resumable");
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        clickOn("+ Nuevo vehículo");
+        waitFor(() -> context().navigator().currentController() instanceof NewVehicleController);
+        NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
+        Path photo = writePhoto("carro.png", Color.GREEN);
+        interact(() -> newVehicle.selectFile(photo));
+        interact(() -> lookup("#nameField").queryAs(TextField.class).setText("Retoma"));
+        Button generate = lookup("Generar modelo").queryButton();
+        waitFor(() -> !generate.isDisabled());
+        clickOn(generate);
+        clickOn("Generar");
+
+        waitFor(() -> lookup("Personalizar").tryQuery().isPresent());
+        assertEquals(2, generationCalls.get(), "Un 504 retomable se repite una vez con la misma foto");
+        assertEquals(List.of("null", "true"), resumeHeaders,
+                "Solo la retoma va marcada: el servidor nunca crea otra generación al retomar");
+        assertTrue(lookup(n -> n instanceof Label l && l.getText() != null
+                && l.getText().contains("tardó más de lo esperado")).tryQuery().isEmpty(), "Sin error falso");
+        assertEquals(30, context().session().getCredits(), "Se cobra un solo modelo");
+        assertEquals(1, context().garage().list().size());
+        // El visor guarda la miniatura en segundo plano: se espera para no cerrar la app a mitad
+        waitFor(() -> context().garage().list().get(0).thumbnail().isPresent());
+    }
+
+    /**
+     * Si el servidor perdió la generación (se reinició) la retoma falla: se muestra el error y la app no pide otra
+     * generación por su cuenta. Crear una nueva cuesta créditos y solo la decide el usuario.
+     */
+    @Test
+    void aResumeThatFindsNothingShowsTheErrorAndNeverStartsAnotherGeneration() throws Exception {
+        generationMode.set("timeout-then-lost");
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        clickOn("+ Nuevo vehículo");
+        waitFor(() -> context().navigator().currentController() instanceof NewVehicleController);
+        NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
+        Path photo = writePhoto("carro.png", Color.MAGENTA);
+        interact(() -> newVehicle.selectFile(photo));
+        interact(() -> lookup("#nameField").queryAs(TextField.class).setText("Perdida"));
+        Button generate = lookup("Generar modelo").queryButton();
+        waitFor(() -> !generate.isDisabled());
+        clickOn(generate);
+        clickOn("Generar");
+
+        waitFor(() -> lookup("El servicio de IA falló. No se descontaron tus créditos.").tryQuery().isPresent());
+        WaitForAsyncUtils.sleep(5, TimeUnit.SECONDS);
+        assertEquals(List.of("null", "true"), resumeHeaders, "Una retoma marcada y nada más");
+        assertEquals(45, context().session().getCredits(), "Sin modelo no se cobra");
+        assertTrue(context().garage().list().isEmpty());
+
+        clickOn("Volver al garaje");
+        waitFor(() -> lookup("Mi garaje").tryQuery().isPresent());
+        assertEquals(2, generationCalls.get(), "Volver al garaje no genera nada");
+    }
+
+    /** Un servidor sin la corrección no manda el flag: se muestra el error y no se reintenta solo. */
+    @Test
+    void aPlainTimeoutShowsTheErrorAndNeverRetriesByItself() throws Exception {
+        generationMode.set("timeout-plain");
+        waitFor(() -> lookup("45 créditos").tryQuery().isPresent());
+        clickOn("+ Nuevo vehículo");
+        waitFor(() -> context().navigator().currentController() instanceof NewVehicleController);
+        NewVehicleController newVehicle = (NewVehicleController) context().navigator().currentController();
+        Path photo = writePhoto("carro.png", Color.ORANGE);
+        interact(() -> newVehicle.selectFile(photo));
+        interact(() -> lookup("#nameField").queryAs(TextField.class).setText("Plano"));
+        Button generate = lookup("Generar modelo").queryButton();
+        waitFor(() -> !generate.isDisabled());
+        clickOn(generate);
+        clickOn("Generar");
+
+        waitFor(() -> lookup(n -> n instanceof Label l && l.getText() != null
+                && l.getText().contains("tardó más de lo esperado")).tryQuery().isPresent());
+        WaitForAsyncUtils.sleep(7, TimeUnit.SECONDS);
+        assertEquals(1, generationCalls.get(), "Sin el flag no se reintenta solo");
+
+        clickOn("Volver al garaje");
+        waitFor(() -> lookup("Mi garaje").tryQuery().isPresent());
+        assertEquals(1, generationCalls.get());
     }
 
     /** Si el backend dice que no quedan créditos (402), se muestran los planes y el saldo queda en cero. */

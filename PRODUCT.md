@@ -33,7 +33,7 @@ De una sola foto a un modelo 3D recoloreable, **sin cuentas, sin login y sin sub
 
 ## Capabilities and Constraints
 
-- **La generación nunca se reintenta sola**; cada generación (incluso un reintento manual) pide confirmación y la cuota/créditos son visibles para el usuario.
+- **La app nunca empieza una generación por su cuenta**; cada generación (incluso un reintento manual) pide confirmación y la cuota/créditos son visibles para el usuario. Lo único automático es retomar una generación que el servidor declara en curso (`504` con `resumable`): se recoge el modelo de la misma tarea y nunca se crea otra.
 - **El modelo se guarda en el garaje en cuanto llega**, antes de abrir el visor: una generación pagada no debe perderse si la app se cierra.
 - El visor 3D solo acepta GLB de **1 malla, 1 primitiva, 1 material** con textura de color base y sin extensiones `KHR_*` obligatorias; un GLB no compatible se rechaza con error claro y se guarda en `logs\unsupported-*.glb`.
 - Con una sola malla **no se pueden reemplazar rines como pieza aparte**; la función de rines está **PENDIENTE** (PRD frontend §17), no implementada.
@@ -57,7 +57,7 @@ De una sola foto a un modelo 3D recoloreable, **sin cuentas, sin login y sin sub
 
 ## Product Principles
 
-1. **Cada generación cuesta dinero real.** Confirmación explícita antes de gastar, cuota siempre visible, cero reintentos automáticos.
+1. **Cada generación cuesta dinero real.** Confirmación explícita antes de gastar, cuota siempre visible y ninguna generación nueva sin que el usuario la pida (retomar una en curso no es una generación nueva).
 2. **Lo generado no se pierde.** Persistir en el garaje antes de mostrar; la app puede cerrarse en cualquier momento sin perder un modelo pagado.
 3. **Privacidad por diseño.** Sin cuentas; la foto solo se usa para generar; el garaje nunca sale del equipo; la verificación de vehículo es local.
 4. **La demo manda.** Fiabilidad en vivo (salidas de emergencia, errores en español claro, arranque estable) por encima de funciones nuevas hasta el 23-nov.

@@ -31,12 +31,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Generando (§5.4). La barra es indeterminada y va con un cronómetro. La generación
- * <b>nunca</b> se reintenta sola: si falla, el usuario decide.
+ * Generando (§5.4). La barra es indeterminada y va con un cronómetro. Una generación que falla
+ * <b>nunca</b> se reintenta sola: el usuario decide. La única excepción es el timeout que el servidor declara
+ * retomable ({@link ApiException#resumable()}): el modelo sigue en marcha y repetir la petición con la misma foto
+ * lo recoge sin crear ni cobrar otro, así que se espera y se retoma sin mostrar un error falso.
  */
 public class GeneratingController implements NavigationAware {
 
     private static final Logger LOG = Logger.getLogger(GeneratingController.class.getName());
+
+    /** Retomas seguidas antes de rendirse; cada una espera hasta ~85 s en el servidor, que conserva la tarea 10 min. */
+    static final int MAX_RESUMES = 8;
+    /** La retoma ya es una espera larga en el servidor: la pausa entre retomas solo retrasa la entrega. */
+    private static final int MIN_RESUME_WAIT_SECONDS = 2;
+    private static final int MAX_RESUME_WAIT_SECONDS = 60;
+    private static final int DEFAULT_RESUME_WAIT_SECONDS = 5;
+
+    private static final String GENERATE_LABEL = "Generando modelo 3D";
 
     private enum StepState { PENDING, ACTIVE, DONE }
 
@@ -82,7 +93,7 @@ public class GeneratingController implements NavigationAware {
         stepWake.setVisible(!serverReady);
         stepWake.setManaged(!serverReady);
         setStep(stepWake, "Calentando motores del taller 3D…  (puede tardar ~1 min)", StepState.PENDING);
-        setStep(stepGenerate, "Generando modelo 3D", StepState.PENDING);
+        setStep(stepGenerate, GENERATE_LABEL, StepState.PENDING);
         setStep(stepPrepare, "Preparando visor", StepState.PENDING);
         cancelButton.setDisable(false);
         startClock();
@@ -107,8 +118,7 @@ public class GeneratingController implements NavigationAware {
                 return;
             }
             Platform.runLater(() -> setStep(stepGenerate, null, StepState.ACTIVE));
-            GenerationResult result = context.api().generate(photo.bytes(), photo.fileName(),
-                    photo.format().mimeType(), myCancel);
+            GenerationResult result = generateResuming(myCancel);
             context.serverMonitor().markReady();
             // El backend ya entregó el modelo: se cobra aunque luego no se pueda abrir en el visor.
             Platform.runLater(context::spendModelCredits);
@@ -119,7 +129,7 @@ public class GeneratingController implements NavigationAware {
             }
 
             Platform.runLater(() -> {
-                setStep(stepGenerate, null, StepState.DONE);
+                setStep(stepGenerate, GENERATE_LABEL, StepState.DONE);
                 setStep(stepPrepare, null, StepState.ACTIVE);
             });
             GarageVehicle vehicle = prepare(result.glb());
@@ -131,6 +141,52 @@ public class GeneratingController implements NavigationAware {
         } catch (RuntimeException e) {
             LOG.log(Level.SEVERE, "Error inesperado al generar", e);
             Platform.runLater(() -> finishError(ApiException.client(ErrorCode.INTERNAL_ERROR, e.toString(), e)));
+        }
+    }
+
+    /**
+     * Pide el modelo y, si el servidor dice que sigue generándolo ({@code resumable}), espera su {@code Retry-After}
+     * y repite con la <b>misma foto</b>: el servidor se une a la tarea en curso. Cualquier otro error se propaga.
+     *
+     * <p>Solo la primera petición, la que el usuario confirmó, puede empezar una generación. Las retomas van
+     * marcadas: si el servidor ya no tiene la generación (se reinició), responde un error en vez de crear otra.
+     */
+    private GenerationResult generateResuming(CompletableFuture<Void> myCancel) throws ApiException {
+        for (int resumes = 0; ; resumes++) {
+            try {
+                return context.api().generate(photo.bytes(), photo.fileName(), photo.format().mimeType(),
+                        resumes > 0, myCancel);
+            } catch (ApiException e) {
+                if (!e.resumable() || resumes >= MAX_RESUMES || myCancel.isDone()) {
+                    throw e;
+                }
+                int wait = resumeWaitSeconds(e.retryAfterSeconds());
+                LOG.info("El modelo sigue generándose en el servidor; se retoma en " + wait + " s (retoma "
+                        + (resumes + 1) + "/" + MAX_RESUMES + ") traceId=" + e.traceId());
+                Platform.runLater(() -> setStep(stepGenerate,
+                        GENERATE_LABEL + " (sigue en el servidor, retomando…)", StepState.ACTIVE));
+                awaitOrCancel(myCancel, wait);
+            }
+        }
+    }
+
+    static int resumeWaitSeconds(Integer retryAfter) {
+        int seconds = retryAfter != null ? retryAfter : DEFAULT_RESUME_WAIT_SECONDS;
+        return Math.max(MIN_RESUME_WAIT_SECONDS, Math.min(MAX_RESUME_WAIT_SECONDS, seconds));
+    }
+
+    /** Duerme {@code seconds}; si el usuario deja de esperar antes, termina como cancelado. */
+    private static void awaitOrCancel(CompletableFuture<Void> myCancel, int seconds) throws ApiException {
+        try {
+            myCancel.get(seconds, java.util.concurrent.TimeUnit.SECONDS);
+            throw new TunaiApiClient.CancelledException();
+        } catch (java.util.concurrent.TimeoutException e) {
+            // Pasó la espera sin cancelar: se retoma
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TunaiApiClient.CancelledException();
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new TunaiApiClient.CancelledException();
         }
     }
 
@@ -251,7 +307,8 @@ public class GeneratingController implements NavigationAware {
             return true;
         }
         boolean leave = Dialogs.confirm(context.stage(), "Dejar de esperar",
-                "La generación sigue en curso. Si dejas de esperar, podría contarse igual. ¿Dejar de esperar?",
+                "La generación sigue en curso y podría contarse igual. Si vuelves a generar con la misma foto, "
+                        + "se retoma sin gastar otro modelo. ¿Dejar de esperar?",
                 "Dejar de esperar");
         if (leave) {
             stopWaiting();

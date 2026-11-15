@@ -29,13 +29,26 @@ import java.util.logging.Logger;
 
 /**
  * Cliente del backend (§6). Las llamadas son bloqueantes: se ejecutan fuera del hilo de la UI.
- * La generación <b>nunca</b> se reintenta automáticamente.
+ * Este cliente <b>nunca</b> reintenta la generación por su cuenta; retomar un timeout que el servidor declara
+ * {@link ApiException#resumable() retomable} lo decide {@code GeneratingController}.
  */
 public class TunaiApiClient {
 
     private static final Logger LOG = Logger.getLogger(TunaiApiClient.class.getName());
 
+    /**
+     * Marca una petición como retoma automática de una generación en curso. Con él el servidor solo puede unirse a
+     * esa generación: si ya no existe responde un error en vez de crear (y cobrar) otra.
+     */
+    public static final String RESUME_HEADER = "X-Generation-Resume";
+
+    /** Plazo para que el servidor empiece a responder; él espera a la IA hasta 85 s por petición. */
     public static final Duration GENERATION_TIMEOUT = Duration.ofSeconds(120);
+    /**
+     * Plazo total de la generación, con la descarga del modelo (de 12 a 50 MB). Va aparte del anterior: un modelo
+     * que ya se generó y se cobró no se pierde porque la descarga sea lenta.
+     */
+    public static final Duration GENERATION_TOTAL_TIMEOUT = Duration.ofSeconds(300);
     /** El backend en Render tarda ~1 minuto en despertar (medido: hasta 86 s). */
     public static final Duration HEALTH_TIMEOUT = Duration.ofSeconds(120);
     public static final Duration QUOTA_TIMEOUT = Duration.ofSeconds(30);
@@ -46,14 +59,25 @@ public class TunaiApiClient {
     private final Supplier<UUID> installationId;
     private final String clientVersion;
     private final Duration generationTimeout;
+    private final Duration generationTotalTimeout;
     private volatile Supplier<String> token = () -> null;
 
     public TunaiApiClient(URI baseUrl, Supplier<UUID> installationId, String clientVersion) {
-        this(baseUrl, installationId, clientVersion, GENERATION_TIMEOUT);
+        this(baseUrl, installationId, clientVersion, GENERATION_TIMEOUT, GENERATION_TOTAL_TIMEOUT);
     }
 
     TunaiApiClient(URI baseUrl, Supplier<UUID> installationId, String clientVersion, Duration generationTimeout) {
+        this(baseUrl, installationId, clientVersion, generationTimeout, generationTimeout);
+    }
+
+    /**
+     * @param generationTimeout      plazo para recibir las cabeceras de la respuesta de la generación
+     * @param generationTotalTimeout plazo total de la generación, con la descarga del modelo
+     */
+    TunaiApiClient(URI baseUrl, Supplier<UUID> installationId, String clientVersion, Duration generationTimeout,
+                   Duration generationTotalTimeout) {
         this.generationTimeout = generationTimeout;
+        this.generationTotalTimeout = generationTotalTimeout;
         this.baseUrl = baseUrl;
         this.installationId = installationId;
         this.clientVersion = clientVersion;
@@ -91,7 +115,7 @@ public class TunaiApiClient {
     /** {@code GET /api/v1/quota}. */
     public Quota quota() throws ApiException {
         HttpRequest request = apiRequest("/api/v1/quota", QUOTA_TIMEOUT).GET().build();
-        HttpResponse<byte[]> response = send(request, QUOTA_TIMEOUT, null);
+        HttpResponse<byte[]> response = send(request, QUOTA_TIMEOUT, QUOTA_TIMEOUT, null);
         if (response.statusCode() != 200) {
             throw toApiException(response);
         }
@@ -107,21 +131,32 @@ public class TunaiApiClient {
         }
     }
 
+    /** Generación nueva, confirmada por el usuario (no es una retoma). */
+    public GenerationResult generate(byte[] image, String fileName, String mimeType,
+                                     CompletableFuture<Void> cancel) throws ApiException {
+        return generate(image, fileName, mimeType, false, cancel);
+    }
+
     /**
-     * {@code POST /api/v1/generations} (multipart, campo {@code image}). Timeout total de 120 s.
+     * {@code POST /api/v1/generations} (multipart, campo {@code image}). El servidor tiene 120 s para empezar a
+     * responder y la petición completa, con la descarga del modelo, 300 s.
      *
+     * @param resume {@code true} si es una retoma automática tras un timeout {@link ApiException#resumable()
+     *               retomable}: añade {@link #RESUME_HEADER} para que el servidor nunca cree otra generación
      * @param cancel se completa para dejar de esperar; el backend puede terminar igual
      */
-    public GenerationResult generate(byte[] image, String fileName, String mimeType,
+    public GenerationResult generate(byte[] image, String fileName, String mimeType, boolean resume,
                                      CompletableFuture<Void> cancel) throws ApiException {
         String boundary = "----TunAI" + UUID.randomUUID().toString().replace("-", "");
         byte[] body = multipart(boundary, image, fileName, mimeType);
-        HttpRequest request = apiRequest("/api/v1/generations", generationTimeout)
+        HttpRequest.Builder builder = apiRequest("/api/v1/generations", generationTotalTimeout)
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-                .header("Accept", "model/gltf-binary, application/problem+json")
-                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
-                .build();
-        HttpResponse<byte[]> response = send(request, generationTimeout, cancel);
+                .header("Accept", "model/gltf-binary, application/problem+json");
+        if (resume) {
+            builder.header(RESUME_HEADER, "true");
+        }
+        HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
+        HttpResponse<byte[]> response = send(request, generationTimeout, generationTotalTimeout, cancel);
         if (response.statusCode() != 200) {
             throw toApiException(response);
         }
@@ -152,7 +187,7 @@ public class TunaiApiClient {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                 .build();
-        HttpResponse<byte[]> response = send(request, LOGIN_TIMEOUT, null);
+        HttpResponse<byte[]> response = send(request, LOGIN_TIMEOUT, LOGIN_TIMEOUT, null);
         if (response.statusCode() != 200) {
             throw toApiException(response);
         }
@@ -181,15 +216,34 @@ public class TunaiApiClient {
         return builder;
     }
 
-    /** Envía con un límite de tiempo total (incluye la descarga del cuerpo). */
-    private HttpResponse<byte[]> send(HttpRequest request, Duration totalTimeout, CompletableFuture<Void> cancel)
-            throws ApiException {
-        CompletableFuture<HttpResponse<byte[]>> future = http.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray());
+    /**
+     * Envía con dos límites: {@code headersTimeout} para que el servidor empiece a responder y {@code totalTimeout}
+     * para todo, con la descarga del cuerpo. Se miden aquí y no con {@link HttpRequest.Builder#timeout} porque el
+     * alcance de ese plazo (solo cabeceras o también el cuerpo) cambia entre versiones del JDK.
+     */
+    private HttpResponse<byte[]> send(HttpRequest request, Duration headersTimeout, Duration totalTimeout,
+                                      CompletableFuture<Void> cancel) throws ApiException {
+        CompletableFuture<Void> headersReceived = new CompletableFuture<>();
+        HttpResponse.BodyHandler<byte[]> handler = info -> {
+            headersReceived.complete(null);
+            return HttpResponse.BodySubscribers.ofByteArray();
+        };
+        CompletableFuture<HttpResponse<byte[]>> future = http.sendAsync(request, handler);
         if (cancel != null) {
             cancel.thenRun(() -> future.cancel(true));
         }
+        long startedAt = System.nanoTime();
         try {
-            return future.get(totalTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            try {
+                return future.get(headersTimeout.toNanos(), TimeUnit.NANOSECONDS);
+            } catch (TimeoutException e) {
+                long left = totalTimeout.toNanos() - (System.nanoTime() - startedAt);
+                if (!headersReceived.isDone() || left <= 0) {
+                    throw e;
+                }
+                // El servidor ya respondió y el cuerpo sigue bajando: se le da el resto del plazo total
+                return future.get(left, TimeUnit.NANOSECONDS);
+            }
         } catch (TimeoutException e) {
             future.cancel(true);
             throw ApiException.client(ErrorCode.CLIENT_TIMEOUT, request.method() + " " + request.uri(), e);
@@ -220,6 +274,7 @@ public class TunaiApiClient {
         String rawCode = null;
         String traceId = null;
         String detail = null;
+        boolean resumable = false;
         String contentType = response.headers().firstValue("Content-Type").orElse("");
         if (contentType.contains("json") && response.body() != null && response.body().length > 0) {
             try {
@@ -227,6 +282,7 @@ public class TunaiApiClient {
                 rawCode = problem.path("code").asText(null);
                 traceId = problem.path("traceId").asText(null);
                 detail = problem.path("detail").asText(null);
+                resumable = problem.path("resumable").asBoolean(false);
             } catch (IOException e) {
                 LOG.fine("Cuerpo de error no es JSON válido");
             }
@@ -242,7 +298,9 @@ public class TunaiApiClient {
             // Respuesta sin problem+json (p. ej. proxy de Render mientras despierta).
             code = status == 503 ? ErrorCode.SERVICE_UNAVAILABLE : ErrorCode.INTERNAL_ERROR;
         }
-        ApiException ex = new ApiException(code, rawCode, status, traceId, retryAfter, quota, detail, null);
+        // Solo un timeout del proveedor puede ser retomable; cualquier otro código con el flag se ignora
+        boolean canResume = resumable && code == ErrorCode.PROVIDER_TIMEOUT;
+        ApiException ex = new ApiException(code, rawCode, status, traceId, retryAfter, quota, detail, canResume, null);
         if (code.logged() || code == ErrorCode.INTERNAL_ERROR) {
             LOG.warning("Error del backend: " + ex.getMessage() + " traceId=" + traceId);
         }

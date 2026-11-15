@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,7 +43,8 @@ class TunaiApiClientTest {
         void handle(HttpExchange ex) throws IOException;
     }
 
-    record HttpExchangeSnapshot(String installationId, String clientVersion, String contentType, byte[] body) {
+    record HttpExchangeSnapshot(String installationId, String clientVersion, String contentType, String resume,
+                                byte[] body) {
     }
 
     @BeforeEach
@@ -55,6 +57,7 @@ class TunaiApiClientTest {
                         ex.getRequestHeaders().getFirst("X-Installation-Id"),
                         ex.getRequestHeaders().getFirst("X-Client-Version"),
                         ex.getRequestHeaders().getFirst("Content-Type"),
+                        ex.getRequestHeaders().getFirst(TunaiApiClient.RESUME_HEADER),
                         ex.getRequestBody().readAllBytes()));
             }
             Handler h = handlers.get(ex.getRequestURI().getPath());
@@ -226,6 +229,130 @@ class TunaiApiClientTest {
         assertEquals("trace-" + code, ex.traceId());
         assertEquals(7, ex.retryAfterSeconds());
         assertEquals(1, generationCalls.get(), "La generación nunca se reintenta sola");
+    }
+
+    private static void timeoutProblem(HttpExchange ex, String extraJson) throws IOException {
+        String json = "{\"status\":504,\"code\":\"PROVIDER_TIMEOUT\",\"traceId\":\"t1\"" + extraJson + "}";
+        ex.getResponseHeaders().add("Retry-After", "20");
+        respond(ex, 504, "application/problem+json", json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** El servidor declara que el modelo sigue generándose: la UI puede retomar con la misma foto. */
+    @Test
+    void aTimeoutTheServerMarksResumableIsResumable() {
+        handlers.put("/api/v1/generations", ex -> timeoutProblem(ex, ",\"resumable\":true"));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> client.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>()));
+        assertEquals(ErrorCode.PROVIDER_TIMEOUT, ex.code());
+        assertTrue(ex.resumable());
+        assertEquals(20, ex.retryAfterSeconds());
+        assertEquals(1, generationCalls.get(), "El cliente nunca reintenta por su cuenta");
+    }
+
+    /** Un servidor sin la corrección no manda el flag: ahí reintentar crearía otra tarea cobrada. */
+    @Test
+    void aTimeoutWithoutTheFlagIsNotResumable() {
+        handlers.put("/api/v1/generations", ex -> timeoutProblem(ex, ""));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> client.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>()));
+        assertFalse(ex.resumable());
+    }
+
+    @Test
+    void theResumableFlagOnAnyOtherErrorIsIgnored() {
+        handlers.put("/api/v1/generations", ex -> respond(ex, 502, "application/problem+json",
+                "{\"status\":502,\"code\":\"PROVIDER_ERROR\",\"resumable\":true}".getBytes(StandardCharsets.UTF_8)));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> client.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>()));
+        assertFalse(ex.resumable());
+    }
+
+    /**
+     * Solo la retoma automática lleva el header: con él el servidor nunca crea otra generación. La petición que
+     * confirmó el usuario va sin él.
+     */
+    @Test
+    void theResumeHeaderIsSentOnlyOnResumes() throws Exception {
+        byte[] glb = {'g', 'l', 'T', 'F', 2, 0, 0, 0, 12, 0, 0, 0};
+        handlers.put("/api/v1/generations", ex -> respond(ex, 200, "model/gltf-binary", glb));
+
+        client.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>());
+        assertNull(lastGeneration.get().resume(), "La generación que confirma el usuario no es una retoma");
+
+        client.generate(new byte[]{1}, "a.png", "image/png", false, new CompletableFuture<>());
+        assertNull(lastGeneration.get().resume());
+
+        client.generate(new byte[]{1}, "a.png", "image/png", true, new CompletableFuture<>());
+        assertEquals("true", lastGeneration.get().resume());
+    }
+
+    private TunaiApiClient clientWith(Duration headersTimeout, Duration totalTimeout) {
+        return new TunaiApiClient(URI.create("http://127.0.0.1:" + server.getAddress().getPort()),
+                () -> INSTALLATION, "1.0.0-test", headersTimeout, totalTimeout);
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Un modelo que el servidor ya empezó a entregar está generado y cobrado: una descarga lenta no lo pierde aunque
+     * supere el plazo de espera de la respuesta, mientras quepa en el plazo total.
+     */
+    @Test
+    void aSlowDownloadHasTheTotalTimeoutNotTheResponseOne() throws Exception {
+        byte[] glb = new byte[4096];
+        glb[0] = 'g';
+        handlers.put("/api/v1/generations", ex -> {
+            ex.getResponseHeaders().add("Content-Type", "model/gltf-binary");
+            ex.sendResponseHeaders(200, glb.length);
+            ex.getResponseBody().write(glb, 0, 1024);
+            ex.getResponseBody().flush();
+            sleep(2000);
+            ex.getResponseBody().write(glb, 1024, glb.length - 1024);
+        });
+        TunaiApiClient patient = clientWith(Duration.ofMillis(700), Duration.ofSeconds(8));
+
+        GenerationResult result = patient.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>());
+
+        assertArrayEquals(glb, result.glb());
+    }
+
+    /** Si el servidor no empieza a responder en su plazo, no se espera el plazo total. */
+    @Test
+    void aServerThatDoesNotAnswerInTimeIsAClientTimeoutBeforeTheTotal() {
+        handlers.put("/api/v1/generations", ex -> sleep(4000));
+        TunaiApiClient impatient = clientWith(Duration.ofMillis(700), Duration.ofSeconds(8));
+        long startedAt = System.nanoTime();
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> impatient.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>()));
+
+        assertEquals(ErrorCode.CLIENT_TIMEOUT, ex.code());
+        assertTrue(Duration.ofNanos(System.nanoTime() - startedAt).compareTo(Duration.ofSeconds(3)) < 0,
+                "Debe rendirse al vencer el plazo de respuesta, no el total");
+    }
+
+    /** La descarga también tiene límite: el plazo total. */
+    @Test
+    void aDownloadThatNeverEndsIsAClientTimeoutAtTheTotal() {
+        handlers.put("/api/v1/generations", ex -> {
+            ex.getResponseHeaders().add("Content-Type", "model/gltf-binary");
+            ex.sendResponseHeaders(200, 4096);
+            ex.getResponseBody().write(new byte[1024]);
+            ex.getResponseBody().flush();
+            sleep(5000);
+        });
+        TunaiApiClient bounded = clientWith(Duration.ofMillis(500), Duration.ofMillis(1500));
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> bounded.generate(new byte[]{1}, "a.png", "image/png", new CompletableFuture<>()));
+
+        assertEquals(ErrorCode.CLIENT_TIMEOUT, ex.code());
     }
 
     @Test

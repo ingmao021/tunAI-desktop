@@ -107,7 +107,8 @@ En GitHub, [`ci.yml`](.github/workflows/ci.yml) corre `mvnw verify` (con las pru
 
 ## Decisiones que conviene conocer
 
-- **La generación nunca se reintenta sola.** Cada generación (también un reintento manual) pide confirmación.
+- **La app nunca empieza una generación por su cuenta.** Cada generación (también un reintento manual) pide confirmación. Lo único automático es **retomar** una que ya está en curso: la IA tarda de 2 a 4 minutos y el servidor responde a los ~85 s con un `504` marcado `resumable`; la app repite la petición con la misma foto y el header `X-Generation-Resume: true`, y el servidor entrega el modelo de la misma tarea. Si el servidor ya no la tiene, responde un error y la app no crea otra.
+- **Dos plazos en la generación:** 120 s para que el servidor empiece a responder y 300 s en total con la descarga del modelo, para no perder por una descarga lenta un modelo que ya se generó.
 - **El modelo se guarda en el garaje en cuanto llega**, antes de abrir el visor: cada generación cuesta créditos y no debe perderse si la app se cierra.
 - **Validación del GLB (§3):** se exige 1 malla, 1 primitiva, 1 material con textura de color base y ninguna extensión obligatoria. Si el GLB trae otras texturas (por ejemplo un mapa de normales), se ignoran en lugar de rechazar el modelo.
 - **Recoloreado:** la máscara de pintura (`PaintMaskStrategy`) solo considera los píxeles que usa el modelo (islas UV) y busca el color dominante. Hay que ajustarla con el GLB del ensayo real.

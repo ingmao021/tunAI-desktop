@@ -23,7 +23,9 @@ public enum ErrorCode {
     PROVIDER_ERROR("El servicio de IA falló. No se descontaron tus créditos.", Action.RETRY),
     SERVICE_BUSY("El servidor está ocupado. Intenta en {retryAfter} s.", Action.RETRY_COUNTDOWN),
     SERVICE_UNAVAILABLE("El servicio no está disponible en este momento.", Action.BACK_TO_GARAGE),
-    PROVIDER_TIMEOUT("La IA tardó demasiado. No se descontaron tus créditos.", Action.RETRY),
+    // Tripo cobra la tarea aunque aquí se agote la espera: no se promete que no se cobró
+    PROVIDER_TIMEOUT("La IA tardó más de lo esperado. El modelo pudo haberse generado y cobrado: espera un minuto "
+            + "y reintenta con la misma foto.", Action.RETRY),
     INTERNAL_ERROR("Ocurrió un error inesperado.", Action.BACK_TO_GARAGE),
     BAD_REQUEST("Ocurrió un error inesperado.", Action.BACK_TO_GARAGE, true),
     NOT_FOUND("Ocurrió un error inesperado.", Action.BACK_TO_GARAGE, true),

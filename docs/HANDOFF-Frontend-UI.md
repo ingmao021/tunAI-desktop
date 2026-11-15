@@ -18,7 +18,7 @@
 - El usuario toma una foto de su carro, la app la envía al backend, y el backend devuelve un **modelo 3D (GLB)** generado por Stable Fast 3D (Stability AI).
 - El usuario ve el carro en 3D, le **cambia el color** y lo guarda en su **garaje local**.
 - **Presupuesto real: 2 generaciones en total** (créditos gratuitos). Una de ensayo y una en vivo en la demo. Por eso:
-  - la app **nunca** reintenta automáticamente un `POST` de generación;
+  - la app **nunca** empieza por su cuenta una generación nueva; solo retoma una que el servidor declara en curso (§5.4);
   - el usuario debe ver claramente que cada generación consume cuota;
   - todo el desarrollo se hace contra el backend con el proveedor `fake`, que devuelve un GLB de ejemplo.
 - No hay cuentas ni login. Cada instalación se identifica con un UUID propio.
@@ -34,7 +34,7 @@
 | Leer el GLB | JglTF `de.javagl:jgltf-model:2.0.4` |
 | Visor 3D | `SubScene` + `TriangleMesh` + `MeshView` + `PhongMaterial` (nativo JavaFX) |
 | Recoloreado | `WritableImage` + `PixelReader` / `PixelWriter` sobre la textura del modelo |
-| HTTP | `java.net.http.HttpClient` (timeout total 120 s, sin reintentos en `POST`) |
+| HTTP | `java.net.http.HttpClient` (120 s para recibir la respuesta, 300 s en total con la descarga; el `POST` solo se repite para retomar un `504` con `resumable`) |
 | JSON | Jackson |
 | ¿Es un vehículo? | ONNX Runtime para Java (`com.microsoft.onnxruntime:onnxruntime`, última versión estable, fijada en el `pom.xml`) + MobileNetV2 entrenado en ImageNet (formato `.onnx`, ~14 MB, incluido en los recursos de la app). Ver §5.3.1 |
 | Pruebas | JUnit 5 + TestFX |
@@ -256,9 +256,10 @@ Aparece **solo la primera vez** o hasta que el usuario acepte.
 
 - Si el servidor ya estaba "listo", se omite el paso "Calentando motores del taller 3D".
 - La barra es **indeterminada** (no hay progreso real) y va con un cronómetro.
-- Timeout total del cliente: **120 s** → error `CLIENT_TIMEOUT` (§7).
+- Plazos del cliente: **120 s** para que el servidor empiece a responder y **300 s** en total con la descarga del modelo → error `CLIENT_TIMEOUT` (§7).
 - `Cancelar espera` solo deja de esperar; el backend puede terminar la generación de todas formas. Se avisa en el texto.
-- **Nunca** reintentar solo. Si falla, el usuario decide si vuelve a intentar.
+- **Nunca** empezar otra generación sin el usuario. Si falla, el usuario decide si vuelve a intentar.
+- **Retoma (única excepción):** la IA tarda de 2 a 4 minutos y el servidor responde a los ~85 s con `504 PROVIDER_TIMEOUT` y `"resumable": true`. No es un error: la generación sigue en el servidor. La app espera el `Retry-After` (mínimo 2 s) y repite la petición con la **misma foto** y el header `X-Generation-Resume: true`, hasta 8 veces, sin mostrar ningún diálogo. Con ese header el servidor solo puede entregar el modelo de la tarea en curso; si ya no la tiene responde `502` y se muestra el error. Un `504` sin `resumable` se trata como error normal.
 - Con éxito: se leen los headers `X-Quota-*`, se actualiza el contador, se valida el GLB (§3) y se abre el visor.
 
 ### 5.5 Visor / Editor
@@ -356,7 +357,8 @@ Configurable con la variable de entorno `TUNAI_API_URL` o con `settings.json`.
 | `PROVIDER_ERROR` (502) | "El servicio de IA falló. No se descontó tu cuota." | Ofrecer `Reintentar` (manual) |
 | `SERVICE_BUSY` (503) | "El servidor está ocupado. Intenta en {Retry-After} s." | Botón `Reintentar` con cuenta regresiva |
 | `SERVICE_UNAVAILABLE` (503) | "El servicio no está disponible en este momento." | Volver al garaje |
-| `PROVIDER_TIMEOUT` (504) | "La IA tardó demasiado. No se descontó tu cuota." | Ofrecer `Reintentar` (manual) |
+| `PROVIDER_TIMEOUT` (504) con `"resumable": true` | (sin mensaje: "Generando modelo 3D (sigue en el servidor, retomando…)") | Retomar sola con la misma foto y `X-Generation-Resume: true` (§5.4) |
+| `PROVIDER_TIMEOUT` (504) sin `resumable`, o tras 8 retomas | "La IA tardó más de lo esperado. El modelo pudo haberse generado y cobrado: espera un minuto y reintenta con la misma foto." | Ofrecer `Reintentar` (manual) |
 | `INTERNAL_ERROR` (500) | "Ocurrió un error inesperado." | Volver al garaje |
 | `BAD_REQUEST` (400), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405) | "Ocurrió un error inesperado." | Son errores de programación del cliente: registrar en log con el `traceId` y volver al garaje |
 | Cualquier `code` desconocido | "Ocurrió un error inesperado." | Tratarlo como `INTERNAL_ERROR`; nunca fallar por un código nuevo |
@@ -378,7 +380,7 @@ Todos los errores incluyen un enlace pequeño **"Detalles"** que muestra el `tra
 | CA-UI-02 | El garaje abre y funciona sin conexión con el servidor |
 | CA-UI-03 | Al abrir la app se llama a `GET /actuator/health` y el indicador refleja el estado |
 | CA-UI-04 | Una foto inválida (formato, tamaño, dimensiones) se rechaza **sin** llamar al backend |
-| CA-UI-05 | Cada generación pide confirmación y nunca se reintenta automáticamente |
+| CA-UI-05 | Cada generación pide confirmación y la app nunca empieza otra por su cuenta; solo retoma, marcada con `X-Generation-Resume`, la que el servidor declara en curso |
 | CA-UI-06 | Cada `code` del catálogo §7 muestra su mensaje y su acción |
 | CA-UI-07 | Un GLB con forma de SF3D (1 malla, 1 textura) se ve derecho, con textura y sin "facetado" |
 | CA-UI-08 | Cambiar el color no congela la ventana y "Restaurar original" vuelve a la textura original |
